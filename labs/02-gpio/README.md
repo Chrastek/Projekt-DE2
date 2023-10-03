@@ -29,3 +29,24 @@
       c = ***      (a, b);
 
       // Infinite loop
+     while (1) ;
+
+      // Will never reach this
+      return 0;
+   }
+
+   // Function definition (body)
+   ***      calculate(uint8_t x, uint8_t y)
+   {
+      uint16_t result;    // result = x^2 + 2xy + y^2
+
+      result = x*x;
+      ***
+      ***
+      return result;
+   }
+   ```
+
+3. Find the difference between a variable and pointer in C. What mean notations `*variable` and `&variable`?
+
+<a name="part1"></a>
