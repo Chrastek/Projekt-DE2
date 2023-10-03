@@ -13,12 +13,12 @@
 /* Defines -----------------------------------------------------------*/
 #define LED_GREEN PB5   // PB5 is AVR pin where green on-board LED 
 #define LED_RED PB0   // PB0 is AVR pin where red external LED 
-#define LED_GREEN_ext PD5   // PD5 is AVR pin where green external LED 
+#define LED_GREENEXT PD5   // PD5 is AVR pin where green external LED 
                         // is connected
 //#define SHORT_DELAY 250 // Delay in milliseconds
 #define SHORT_DELAY 500 // Delay in milliseconds
 #ifndef F_CPU
-# define F_CPU 16000000 // CPU frequency in Hz required for delay funcs
+#define F_CPU 16000000 // CPU frequency in Hz required for delay funcs
 #endif
 
 /* Includes ----------------------------------------------------------*/
@@ -46,21 +46,21 @@ int main(void)
 {
     //uint8_t led_green_value = 0;  // Local variable to keep LED status
     //uint8_t led_red_value = 0;  // Local variable to keep LED status
-    uint8_t led_green_ext_value = 0;  // Local variable to keep LED status
+    //uint8_t led_green_ext_value = 0;  // Local variable to keep LED status
 
     uint8_t counter = 0;
     uint8_t ones = 0b1010;
-    uint8_t ones_shift = 0b1010;
+    uint8_t ones_shift;
     uint8_t twos = 0b1100;
-    uint8_t twos_shift = 0b1100;
+    uint8_t twos_shift;
     uint8_t mask = 0b00000001;
 
 
     // Set pin where on-board LED is connected as output
     pinMode(LED_GREEN, OUTPUT);
     pinMode(LED_RED, OUTPUT);
-    pinMode(LED_GREEN_ext,OUTPUT);
-
+    pinMode(LED_GREENEXT, OUTPUT);
+ 
 
     // Infinite loop
     while (1)
@@ -72,7 +72,7 @@ int main(void)
         if (counter < 5) {
 
 
-            digitalWrite(LED_GREEN_ext, (mask & ones_shift));
+            digitalWrite(LED_GREENEXT, (mask & ones_shift));
             digitalWrite(LED_RED, (mask & twos_shift));
 
             ones_shift = ones >> counter;
@@ -97,8 +97,6 @@ int main(void)
         }
         else {
             counter = 0;
-            ones_shift = 0b1010;
-            twos_shift = 0b1100;
         }
     }
 
