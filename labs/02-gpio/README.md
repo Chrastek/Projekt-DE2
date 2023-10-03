@@ -50,5 +50,5 @@
 3. Find the difference between a variable and pointer in C. What mean notations `*variable` and `&variable`?
 
 A `variable` in C is a named space in memory where we can store a data.
-Notation `*variable` is called `*pointer` and it can reserves defined space in memory. It contains address of variable not its value.
+Notation `*variable` is called _pointer_ and it can reserves defined space in memory. It contains address of variable not its value.
 Notation `&variable` returns address of variable where is stored in memory.
