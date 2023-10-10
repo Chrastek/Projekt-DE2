@@ -51,6 +51,7 @@ int main(void)
 {
     uint8_t led_value = 0;  // Local variable to keep LED status
     bool button_down = false;
+    bool symptom_butt_down = false;
 
     // Set pins where LEDs are connected as output
     // Ver 1: Arduino style
@@ -73,28 +74,42 @@ int main(void)
         // Pause several milliseconds
         _delay_ms(SHORT_DELAY);
         if (GPIO_read(&PINB,BUTTON)) {
-          // Change LED value
-          if (led_value == 0) {
-              led_value = 1;
-              // Set pin(s) to HIGH
-              // digitalWrite(LED_GREEN, HIGH);
-              // digitalWrite(LED_RED, HIGH);
-              // PORTB |= (1 << LED_GREEN);
-              // PORTB |= (1 << LED_RED);
-              GPIO_write_high(&DDRB, LED_GREEN);
-              GPIO_write_high(&DDRB, LED_RED);
+
+          if (button_down){
+            button_down = false;
           }
           else {
-              led_value = 0;
-              // Clear pin(s) to LOW
-              // digitalWrite(LED_GREEN, LOW);
-              // digitalWrite(LED_RED, LOW);
-              // PORTB &= ~(1 << LED_GREEN);
-              // PORTB &= ~(1 << LED_RED);
-              GPIO_write_low(&DDRB, LED_GREEN);
-              GPIO_write_low(&DDRB, LED_RED);
+            button_down = true;
           }
         }
+
+        if (button_down)
+        {
+           // Change LED value
+            if (led_value == 0) {
+                led_value = 1;
+                // Set pin(s) to HIGH
+                // digitalWrite(LED_GREEN, HIGH);
+                // digitalWrite(LED_RED, HIGH);
+                // PORTB |= (1 << LED_GREEN);
+                // PORTB |= (1 << LED_RED);
+                GPIO_write_high(&DDRB, LED_GREEN);
+                GPIO_write_high(&DDRB, LED_RED);
+            }
+            else {
+                led_value = 0;
+                // Clear pin(s) to LOW
+                // digitalWrite(LED_GREEN, LOW);
+                // digitalWrite(LED_RED, LOW);
+                // PORTB &= ~(1 << LED_GREEN);
+                // PORTB &= ~(1 << LED_RED);
+                GPIO_write_low(&DDRB, LED_GREEN);
+                GPIO_write_low(&DDRB, LED_RED);
+            }
+        }
+        
+        
+        
     }
 
     // Will never reach this
