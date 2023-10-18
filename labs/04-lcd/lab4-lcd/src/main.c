@@ -33,7 +33,7 @@
 #include "timer.h"          // Timer library for AVR-GCC
 #include <./lcd.h>            // Peter Fleury's LCD library
 #include <stdlib.h>         // C library. Needed for number conversions
-#define N_CHARS 7  // Number of new custom characters
+#define N_CHARS 8  // Number of new custom characters
 
 /* Function definitions ----------------------------------------------*/
 /**********************************************************************
@@ -54,14 +54,16 @@ int main(void)
       
       //progress bar
       //addr 0x02
-        0b10000,0b10000,0b10000, 0b10000, 0b10000, 0b10000, 0b10000, 0b10000,
+        0b00000, 0b00000, 0b00000, 0b00000, 0b00000, 0b00000, 0b00000, 0b00000,
       //addr 0x03
-        0b11000, 0b11000, 0b11000, 0b11000, 0b11000, 0b11000, 0b11000, 0b11000,
+        0b10000, 0b10000, 0b10000, 0b10000, 0b10000, 0b10000, 0b10000, 0b10000,
       //addr 0x04
-        0b11100, 0b11100, 0b11100, 0b11100, 0b11100, 0b11100, 0b11100, 0b11100,
+        0b11000, 0b11000, 0b11000, 0b11000, 0b11000, 0b11000, 0b11000, 0b11000,
       //addr 0x05
-        0b11110, 0b11110, 0b11110, 0b11110, 0b11110, 0b11110, 0b11110, 0b11110,
+        0b11100, 0b11100, 0b11100, 0b11100, 0b11100, 0b11100, 0b11100, 0b11100,
       //addr 0x06
+        0b11110, 0b11110, 0b11110, 0b11110, 0b11110, 0b11110, 0b11110, 0b11110,
+      //addr 0x07
         0b11111, 0b11111, 0b11111, 0b11111, 0b11111, 0b11111, 0b11111, 0b11111
     };
 
@@ -85,8 +87,8 @@ int main(void)
     TIM2_OVF_16MS;
     TIM2_OVF_ENABLE;
 
-    // TIM0_OVF_16MS;
-    // TIM0_OVF_ENABLE;
+    TIM0_OVF_16MS;
+    TIM0_OVF_ENABLE;
 
     // Enables interrupts by setting the global interrupt mask
     sei();
@@ -161,37 +163,39 @@ ISR(TIMER2_OVF_vect)
         lcd_putc(0x00);
         lcd_putc(0x01);
         
-        //lcd_gotoxy(1,1);
-        //if ((tenths % 2) == 0) {
-        //  lcd_putc(0x02);
-//
-        //}
-        
+                
         lcd_gotoxy(11, 1);
         lcd_putc('c');
     }
     // Else do nothing and exit the ISR
 }
 
-// ISR(TIMER0_OVF_vect)
-// {
-//     static uint8_t symbol = 0x02;
-//     static uint8_t position = 0;
-//     static uint8_t counts = 0;  
+ISR(TIMER0_OVF_vect)
+{
+  static uint8_t no_of_overflows = 0;
+    static uint8_t symbol = 0x02;
+    static uint8_t position = 0;
+    static uint8_t counts = 0;  
 
-//   lcd_gotoxy(1+position, 1);
-//   lcd_putc(symbol);
-//   /* tenths++;
-//   if ( (tenths % 2) == 0) {
-//       symbol++;
-//       if (symbol > 0x06) {
-//         position++;
-//       }
-//   }
+  lcd_gotoxy(1+position, 1);
+  lcd_putc(symbol);
+  counts++;
+
+  if ( (counts % 2) == 0) {
+      symbol++;
+      if (symbol > 0x07) {
+        symbol = 0x02;
+        position++;
+      }
+  }
   
-//  if(position > 36) {
-//   position = 0; */
+ if(position > 9) {
+  lcd_gotoxy(1,1);
+  for (uint8_t i = 0; i< 10; i++) {
+    lcd_putc(' ');
+  }
+  position = 0; 
   
-//  //}
+ }
     
-// }
+}
