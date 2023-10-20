@@ -67,6 +67,8 @@ int main(void)
         0b11111, 0b11111, 0b11111, 0b11111, 0b11111, 0b11111, 0b11111, 0b11111
     };
 
+    
+
     // Initialize display
     lcd_init(LCD_DISP_ON);
 
@@ -158,24 +160,36 @@ ISR(TIMER2_OVF_vect)
         itoa(tenths, string, 10);  
         lcd_puts(string);
         
-
-        lcd_gotoxy(11, 0);
+        
+        lcd_gotoxy(10, 0);
+        // Print heart symbol
         lcd_putc(0x00);
         lcd_putc(0x01);
+
+        // print square of seconds
+        if (seconds != 0) {
+          itoa(seconds*seconds, string, 10);
+          lcd_puts(string);
+        }
+        
         
                 
-        lcd_gotoxy(11, 1);
-        lcd_putc('c');
+        //lcd_gotoxy(11, 1);
+        //lcd_putc('c');
     }
     // Else do nothing and exit the ISR
 }
 
 ISR(TIMER0_OVF_vect)
 {
+  uint8_t sentence [] = "I like digital electronis!";
   static uint8_t no_of_overflows = 0;
     static uint8_t symbol = 0x02;
     static uint8_t position = 0;
-    static uint8_t counts = 0;  
+    static uint8_t counts = 0;
+    static uint8_t tenths = 0;
+    static uint8_t seconds = 0; 
+    static uint8_t index = 0;
 
   lcd_gotoxy(1+position, 1);
   lcd_putc(symbol);
@@ -186,6 +200,17 @@ ISR(TIMER0_OVF_vect)
       if (symbol > 0x07) {
         symbol = 0x02;
         position++;
+        lcd_gotoxy(11, 1);
+        lcd_putc(sentence[index]);
+        lcd_putc(sentence[index+1]);
+        lcd_putc(sentence[index+2]);
+        lcd_putc(sentence[index+3]);
+        lcd_putc(sentence[index+5]);
+        
+        if ((index + 5) == (sizeof(sentence) - 1 ) ) {
+            index = 0;
+        }
+        index++;
       }
   }
   
@@ -194,8 +219,28 @@ ISR(TIMER0_OVF_vect)
   for (uint8_t i = 0; i< 10; i++) {
     lcd_putc(' ');
   }
-  position = 0; 
   
  }
+ 
+//  if (no_of_overflows >= 6) {
+//   no_of_overflows = 0;
+
+//     tenths++;
+//     if (tenths > 9) {
+//       tenths = 0;
+//       seconds++;
+//       if (seconds >=2) {
+//         seconds=0;
+//         lcd_gotoxy(11, 1);
+//         lcd_putc(sentence[index]);
+//         lcd_putc(sentence[index+1]);
+//         lcd_putc(sentence[index+2]);
+//         lcd_putc(sentence[index+3]);
+//         lcd_putc(sentence[index+5]);
+//       }
+//     }
+
+
+//  }
     
 }
