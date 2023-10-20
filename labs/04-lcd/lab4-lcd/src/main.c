@@ -135,6 +135,11 @@ ISR(TIMER2_OVF_vect)
           if (seconds > 59) {
             seconds = 0;
             minutes++;
+            lcd_gotoxy(12, 0);
+            lcd_putc(' ');
+            lcd_putc(' ');
+            lcd_putc(' ');
+            lcd_putc(' ');
           }
         }
 
@@ -182,65 +187,45 @@ ISR(TIMER2_OVF_vect)
 
 ISR(TIMER0_OVF_vect)
 {
-  uint8_t sentence [] = "I like digital electronis!";
+  uint8_t sentence [] = "I like digital electronics! ";
   static uint8_t no_of_overflows = 0;
     static uint8_t symbol = 0x02;
     static uint8_t position = 0;
     static uint8_t counts = 0;
-    static uint8_t tenths = 0;
-    static uint8_t seconds = 0; 
     static uint8_t index = 0;
 
   lcd_gotoxy(1+position, 1);
   lcd_putc(symbol);
-  counts++;
 
-  if ( (counts % 2) == 0) {
-      symbol++;
+ 
+ no_of_overflows++;
+ if (no_of_overflows >= 6) {
+  no_of_overflows = 0;
+    symbol++;
       if (symbol > 0x07) {
         symbol = 0x02;
         position++;
-        lcd_gotoxy(11, 1);
-        lcd_putc(sentence[index]);
-        lcd_putc(sentence[index+1]);
-        lcd_putc(sentence[index+2]);
-        lcd_putc(sentence[index+3]);
-        lcd_putc(sentence[index+5]);
-        
-        if ((index + 5) == (sizeof(sentence) - 1 ) ) {
-            index = 0;
-        }
-        index++;
+        counts++;
       }
+      
+      index = counts % 24;
+      lcd_gotoxy(11, 1);
+      lcd_putc(sentence[index]);
+      lcd_putc(sentence[index+1]);
+      lcd_putc(sentence[index+2]);
+      lcd_putc(sentence[index+3]);
+      lcd_putc(sentence[index+4]);
+      if (counts > 240) {
+        counts = 0;
+      }
+      
+    if(position > 9) {
+      position=0;
+      lcd_gotoxy(1+position, 1);
+      for (uint8_t i = 0; i< 10; i++) {
+        lcd_putc(' ');
+      }
+    }
   }
-  
- if(position > 9) {
-  lcd_gotoxy(1,1);
-  for (uint8_t i = 0; i< 10; i++) {
-    lcd_putc(' ');
-  }
-  
- }
- 
-//  if (no_of_overflows >= 6) {
-//   no_of_overflows = 0;
 
-//     tenths++;
-//     if (tenths > 9) {
-//       tenths = 0;
-//       seconds++;
-//       if (seconds >=2) {
-//         seconds=0;
-//         lcd_gotoxy(11, 1);
-//         lcd_putc(sentence[index]);
-//         lcd_putc(sentence[index+1]);
-//         lcd_putc(sentence[index+2]);
-//         lcd_putc(sentence[index+3]);
-//         lcd_putc(sentence[index+5]);
-//       }
-//     }
-
-
-//  }
-    
 }
