@@ -23,7 +23,6 @@
 #include <avr/interrupt.h>  // Interrupts standard C library for AVR-GCC
 #include "timer.h"          // Timer library for AVR-GCC
 #include <twi.h>            // I2C/TWI library for AVR-GCC
-#include <uart.h>           // Peter Fleury's UART library
 #include <stdlib.h>         // C library. Needed for number conversions
 //#include <font.h>           // Library of defined font for Oled display
 #include <oled.h>           // Oled library
