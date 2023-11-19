@@ -73,17 +73,17 @@ void ACD_enable_interrupt()
  * Returns:  none
  **********************************************************************/
 //Set prescaler 001 --> 2 
-void ACD_set_prescaler_2(){ADCSRA &= ~((1<<ADPS2) | (1<<ADPS1)); ADCSRA|=(1<<ADPS0)}
+void ACD_set_prescaler_2(){ADCSRA &= ~((1<<ADPS2) | (1<<ADPS1)); ADCSRA|=(1<<ADPS0);}
 //Set prescaler 010 --> 4 
-void ACD_set_prescaler_4(){ADCSRA &= ~((1<<ADPS2) | (1<<ADPS0)); ADCSRA|=(1<<ADPS1)}
+void ACD_set_prescaler_4(){ADCSRA &= ~((1<<ADPS2) | (1<<ADPS0)); ADCSRA|=(1<<ADPS1);}
 //Set prescaler 011 --> 8 
-void ACD_set_prescaler_8(){ADCSRA &= ~(1<<ADPS2); ADCSRA|=((1<<ADPS1) | (1<<ADPS0))}
+void ACD_set_prescaler_8(){ADCSRA &= ~(1<<ADPS2); ADCSRA|=((1<<ADPS1) | (1<<ADPS0));}
 //Set prescaler 100 --> 16 
-void ACD_set_prescaler_16(){ADCSRA &= ~((1<<ADPS1) | (1<<ADPS0)); ADCSRA|=(1<<ADPS2)}
+void ACD_set_prescaler_16(){ADCSRA &= ~((1<<ADPS1) | (1<<ADPS0)); ADCSRA|=(1<<ADPS2);}
 //Set prescaler 101 --> 32 
-void ACD_set_prescaler_32(){ADCSRA &= ~(1<<ADPS1); ADCSRA|=((1<<ADPS2) | (1<<ADPS0))}
+void ACD_set_prescaler_32(){ADCSRA &= ~(1<<ADPS1); ADCSRA|=((1<<ADPS2) | (1<<ADPS0));}
 //Set prescaler 110 --> 64 
-void ACD_set_prescaler_64(){ADCSRA &= ~(1<<ADPS0); ADCSRA|=((1<<ADPS2) | (1<<ADPS1))}
+void ACD_set_prescaler_64(){ADCSRA &= ~(1<<ADPS0); ADCSRA|=((1<<ADPS2) | (1<<ADPS1));}
 //Set prescaler 111 --> 128 
 void ACD_set_prescaler_128(){ADCSRA |= ((1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0));}
 

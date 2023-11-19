@@ -1,7 +1,7 @@
 /***********************************************************************
  * 
- * The I2C (TWI) bus scanner tests all addresses and detects devices
- * that are connected to the SDA and SCL signals.
+ * 
+ * PROJECT MEASURING ELECTRICITY
  * 
  * ATmega328P (Arduino Uno), 16 MHz, PlatformIO
  *
@@ -26,6 +26,7 @@
 #include <stdlib.h>         // C library. Needed for number conversions
 //#include <font.h>           // Library of defined font for Oled display
 #include <oled.h>           // Oled library
+#include <adc.h>           // ADC library for AVR-GCC
 
 
 
@@ -67,7 +68,6 @@ int main(void)
     // UART
     uart_init(UART_BAUD_SELECT(115200, F_CPU));
 
-    sei();  // Needed for UART
 
     //OLED
     oled_init(OLED_DISP_ON);
@@ -100,16 +100,57 @@ int main(void)
         uart_puts("[ERROR] I2C device not detected\r\n");
         while (1);
     }
+    
+    
+    /***************************************************
+     * 
+     * Configure ADC0 
+     * 
+    ***************************************************/
 
-    // Timer1
-    TIM1_OVF_1SEC
+    // Configure Analog-to-Digital Convertion unit
+    // Select ADC voltage reference to "AVcc with external capacitor at AREF pin"
+    ADMUX |= (1<<REFS0);
+    ACD_select_voltage_ref();
+
+    // Select input channel ADC0 (voltage divider pin), 0001
+    ADMUX &= ~((1<<MUX3) | (1<<MUX2) | (1<<MUX1)); ADMUX |= (1<<MUX0);
+
+    // Enable ADC module
+    ADCSRA |= (1<<ADEN);
+
+    // Enable conversion complete interrupt
+    ADCSRA |= (1<<ADIE);
+
+    // Set clock prescaler to 128
+    ADCSRA |= ((1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0)); 
+
+    // Configuration of 8-bit Timer/Counter0 for Stopwatch update
+    // Set the overflow prescaler to 16 ms and enable interrupt
+    TIM0_OVF_16MS
+    TIM0_OVF_ENABLE
+
+    // Configuration of 16-bit Timer/Counter1 for Stopwatch update
+    // Set the overflow prescaler to 4 ms and enable interrupt
+    TIM1_OVF_4MS
     TIM1_OVF_ENABLE
 
-    sei();
+    // Configuration of 8-bit Timer/Counter2 for Stopwatch update
+    // Set the overflow prescaler to 16 ms and enable interrupt
+    TIM2_OVF_16MS
+    TIM2_OVF_ENABLE
+
+    // Enables interrupts by setting the global interrupt mask
+    sei();  
+
 
     // Infinite loop
     while (1) {
-        if (new_sensor_data == 1) {
+
+        /* Empty loop. All subsequent operations are performed exclusively 
+         * inside interrupt service routines ISRs */
+
+        /* if (new_sensor_data == 1) {
             itoa(dht12.hum_int, string, 10);
             uart_puts(string);
             oled_gotoxy(0, 6);
@@ -146,8 +187,8 @@ int main(void)
             oled_display();
 
             // Do not print it again and wait for the new data
-            new_sensor_data = 0;
-        }
+            new_sensor_data = 0; 
+        }*/
     }
 
     // Will never reach this
