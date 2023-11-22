@@ -224,3 +224,13 @@ ISR(TIMER1_OVF_vect)
     }
     twi_stop();
 }
+
+ISR (TIMER1_OVF_vect)
+{
+    static uint8_t no_of_overflow = 0;
+
+    no_of_overflow++;
+    if (no_of_overflow >= 3){
+        
+    }
+}
