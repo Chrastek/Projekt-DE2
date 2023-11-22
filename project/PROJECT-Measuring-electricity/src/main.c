@@ -27,21 +27,13 @@
 //#include <font.h>           // Library of defined font for Oled display
 #include <oled.h>           // Oled library
 #include <adc.h>           // ADC library for AVR-GCC
-#include <uart.h>
+#include <uart.h>           // UART library for AVR-GCC
 
 
 
 /* Global variables --------------------------------------------------*/
 /* Global variables --------------------------------------------------*/
-// Declaration of "dht12" variable with structure "DHT_values_structure"
-
-/* struct DHT_values_structure {
-   uint8_t hum_int;
-   uint8_t hum_dec;
-   uint8_t temp_int;
-   uint8_t temp_dec;
-   uint8_t checksum;
-} dht12; */
+// Declaration of "m_data" variable with structure "Measure_data"
 
 struct Measure_data {
    uint8_t voltage;
@@ -52,13 +44,6 @@ struct Measure_data {
 
 // Flag for printing new data from sensor
 //volatile uint8_t new_sensor_data = 0;
-
-
-// Slave and internal addresses of temperature/humidity sensor DHT12
-#define SENSOR_ADR 0x5c
-#define SENSOR_HUM_MEM 0
-#define SENSOR_TEMP_MEM 2
-#define SENSOR_CHECKSUM 4
 
 
 /* Function definitions ----------------------------------------------*/
@@ -75,7 +60,7 @@ int main(void)
     twi_init();
 
     // UART
-    uart_init(UART_BAUD_SELECT(9600, F_CPU));
+    uart_init(UART_BAUD_SELECT(115200, F_CPU));
 
 
     //OLED
@@ -130,23 +115,20 @@ int main(void)
     // Configure Analog-to-Digital Convertion unit
     // Select ADC voltage reference to "AVcc with external capacitor at AREF pin"
     //ADMUX |= (1<<REFS0);
-    ACD_select_voltage_ref();
-
-    // Select input channel ADC0 (voltage divider pin), 0001
-    //ADMUX &= ~((1<<MUX3) | (1<<MUX2) | (1<<MUX1)); ADMUX |= (1<<MUX0);
+    ADC_SELECT_VOLTAGE_REF
 
     // Enable ADC module
     //ADCSRA |= (1<<ADEN);
-    ACD_enable();
+    ADC_ENABLE
 
 
     // Enable conversion complete interrupt
     //ADCSRA |= (1<<ADIE);
-    ACD_enable_interrupt();
+    ADC_ENABLE_INTERRUPT
 
     // Set clock prescaler to 128
     //ADCSRA |= ((1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0));
-    ACD_set_prescaler_128(); 
+    ADC_SET_PRESCALER_128 
 
     // Configuration of 8-bit Timer/Counter0 for Stopwatch update
     // Set the overflow prescaler to 16 ms and enable interrupt
@@ -257,7 +239,7 @@ ISR(TIMER1_OVF_vect)
   
   if(no_of_overflows >=3) {
     // Start ADC conversion
-    ACD_start_conv();
+    ADC_START_CONV
   }
 
 }
@@ -294,7 +276,7 @@ ISR(ADC_vect)
         //uart_puts(".");
 
         channel = 1;
-        ACD_select_channel_A1();
+        ADC_SELECT_CHANNEL_A1
         break;
     case 1:
         m_data.current = value;
@@ -305,7 +287,7 @@ ISR(ADC_vect)
         oled_puts(string);
 
         channel = 2;
-        ACD_select_channel_A2();
+        ADC_SELECT_CHANNEL_A2
         break;
     case 2:
         m_data.capacitance = value;
@@ -316,7 +298,7 @@ ISR(ADC_vect)
         oled_puts(string);
 
         channel = 3;
-        ACD_select_channel_A3();
+        ADC_SELECT_CHANNEL_A3
         break;
     
     default:
@@ -328,7 +310,7 @@ ISR(ADC_vect)
         oled_puts(string);
 
         channel = 0;
-        ACD_select_channel_A0();
+        ADC_SELECT_CHANNEL_A0
         break;
     }
 
