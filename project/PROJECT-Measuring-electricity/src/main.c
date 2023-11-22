@@ -27,6 +27,7 @@
 //#include <font.h>           // Library of defined font for Oled display
 #include <oled.h>           // Oled library
 #include <adc.h>           // ADC library for AVR-GCC
+#include <uart.h>
 
 
 
@@ -112,12 +113,12 @@ int main(void)
     
 
     // Test if sensor is ready
-    if (twi_test_address(SENSOR_ADR) == 0)
+    /* if (twi_test_address(SENSOR_ADR) == 0)
         uart_puts("I2C sensor detected\r\n");
     else {
         uart_puts("[ERROR] I2C device not detected\r\n");
-        while (1);
-    }
+        while (1); 
+    }*/
     
     
     /***************************************************
@@ -128,23 +129,23 @@ int main(void)
 
     // Configure Analog-to-Digital Convertion unit
     // Select ADC voltage reference to "AVcc with external capacitor at AREF pin"
-    ADMUX |= (1<<REFS0);
+    //ADMUX |= (1<<REFS0);
     ACD_select_voltage_ref();
 
     // Select input channel ADC0 (voltage divider pin), 0001
-    ADMUX &= ~((1<<MUX3) | (1<<MUX2) | (1<<MUX1)); ADMUX |= (1<<MUX0);
+    //ADMUX &= ~((1<<MUX3) | (1<<MUX2) | (1<<MUX1)); ADMUX |= (1<<MUX0);
 
     // Enable ADC module
-    ADCSRA |= (1<<ADEN);
+    //ADCSRA |= (1<<ADEN);
     ACD_enable();
 
 
     // Enable conversion complete interrupt
-    ADCSRA |= (1<<ADIE);
-    ACD_enable_interrupt()
+    //ADCSRA |= (1<<ADIE);
+    ACD_enable_interrupt();
 
     // Set clock prescaler to 128
-    ADCSRA |= ((1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0));
+    //ADCSRA |= ((1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0));
     ACD_set_prescaler_128(); 
 
     // Configuration of 8-bit Timer/Counter0 for Stopwatch update

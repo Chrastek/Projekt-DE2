@@ -43,56 +43,56 @@
  * @brief  Select voltage reference by REFS1, REFS0.
  * @return none
  */
-void ACD_select_voltage_ref();
+void ACD_select_voltage_ref(void);
 
 
 /**
  * @brief  Select input channel.
  * @return none
  */
-void ACD_select_channel_A0();
+void ACD_select_channel_A0(void);
 
 
 /**
  * @brief  Select input channel.
  * @return none
  */
-void ACD_select_channel_A1();
+void ACD_select_channel_A1(void);
 
 
 /**
  * @brief  Select input channel.
  * @return none
  */
-void ACD_select_channel_A2();
+void ACD_select_channel_A2(void);
 
 
 /**
  * @brief  Select input channel.
  * @return none
  */
-void ACD_select_channel_A3();
+void ACD_select_channel_A3(void);
 
 
 /**
  * @brief  Select input channel.
  * @return none
  */
-void ACD_select_channel_A4();
+void ACD_select_channel_A4(void);
 
 
 /**
  * @brief  Select input channel.
  * @return none
  */
-void ACD_select_channel_A5();
+void ACD_select_channel_A5(void);
 
 
 /**
  * @brief  Enable ADC module.
  * @return none
  */
-void ACD_enable();
+void ACD_enable(void);
 
 
 /**
