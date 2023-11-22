@@ -54,67 +54,69 @@ struct Measure_data {
 **********************************************************************/
 int main(void)
 {
-    char string[2];  // String for converting numbers by itoa()
+    //char string[2];  // String for converting numbers by itoa()
 
     // TWI
     twi_init();
 
     // UART
-    uart_init(UART_BAUD_SELECT(115200, F_CPU));
+    uart_init(UART_BAUD_SELECT(9600, F_CPU));
 
+    uart_puts("UART starting... ");
+    uart_puts("done\r\n");
 
     //OLED
-    oled_init(OLED_DISP_ON);
-    oled_clrscr();
+    // oled_init(OLED_DISP_ON);
+    // oled_clrscr();
 
-    oled_charMode(DOUBLESIZE);
-    //oled_puts("OLED disp.");
-    oled_puts("MULTIMETR");
+    // oled_charMode(DOUBLESIZE);
+    // //oled_puts("OLED disp.");
+    // oled_puts("MULTIMETR");
 
-    oled_charMode(NORMALSIZE);
+    // oled_charMode(NORMALSIZE);
 
-    // oled_gotoxy(x, y)
-    oled_gotoxy(0, 2);
-    //oled_puts("128x64, SHH1106");
-    oled_puts("DE2 - projekt 2023");
+    // // oled_gotoxy(x, y)
+    // oled_gotoxy(0, 2);
+    // //oled_puts("128x64, SHH1106");
+    // oled_puts("DE2 - projekt 2023");
 
-    oled_gotoxy(0, 3);
-    //oled_puts("BPC-DE2, Brno");
-    oled_puts("Voltage:");
+    // oled_gotoxy(0, 3);
+    // //oled_puts("BPC-DE2, Brno");
+    // oled_puts("Voltage:");
 
-    // oled_drawLine(x1, y1, x2, y2, color)
-    oled_drawLine(0, 25, 120, 25, WHITE);
+    // // oled_drawLine(x1, y1, x2, y2, color)
+    // oled_drawLine(0, 25, 120, 25, WHITE);
 
-    oled_gotoxy(0, 4);
-    //oled_puts("Hum     Temp");
-    oled_puts("Current:");
+    // oled_gotoxy(0, 4);
+    // //oled_puts("Hum     Temp");
+    // oled_puts("Current:");
 
-    oled_gotoxy(0, 5);
-    oled_puts("Capacitance:");
+    // oled_gotoxy(0, 5);
+    // oled_puts("Capacitance:");
 
-    oled_gotoxy(0, 6);
-    oled_puts("Resistance:");
+    // oled_gotoxy(0, 6);
+    // oled_puts("Resistance:");
 
     
 
-    // Test if sensor is ready
-    /* if (twi_test_address(SENSOR_ADR) == 0)
-        uart_puts("I2C sensor detected\r\n");
-    else {
-        uart_puts("[ERROR] I2C device not detected\r\n");
-        while (1); 
-    }*/
+    // // Test if sensor is ready
+    // /* if (twi_test_address(SENSOR_ADR) == 0)
+    //     uart_puts("I2C sensor detected\r\n");
+    // else {
+    //     uart_puts("[ERROR] I2C device not detected\r\n");
+    //     while (1); 
+    // }*/
     
     
-    /***************************************************
-     * 
-     * Configure ADC0 
-     * 
-    ***************************************************/
+    // /***************************************************
+    //  * 
+    //  * Configure ADC0 
+    //  * 
+    // ***************************************************/
 
-    // Configure Analog-to-Digital Convertion unit
-    // Select ADC voltage reference to "AVcc with external capacitor at AREF pin"
-    //ADMUX |= (1<<REFS0);
+    // // Configure Analog-to-Digital Convertion unit
+    // // Select ADC voltage reference to "AVcc with external capacitor at AREF pin"
+    // //ADMUX |= (1<<REFS0);
     ADC_SELECT_VOLTAGE_REF
 
     // Enable ADC module
@@ -130,25 +132,25 @@ int main(void)
     //ADCSRA |= ((1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0));
     ADC_SET_PRESCALER_128 
 
-    // Configuration of 8-bit Timer/Counter0 for Stopwatch update
-    // Set the overflow prescaler to 16 ms and enable interrupt
+    // // Configuration of 8-bit Timer/Counter0 for Stopwatch update
+    // // Set the overflow prescaler to 16 ms and enable interrupt
     TIM0_OVF_16MS
     TIM0_OVF_ENABLE
 
-    // Configuration of 16-bit Timer/Counter1 for Stopwatch update
-    // Set the overflow prescaler to 4 ms and enable interrupt
-    TIM1_OVF_4MS
-    TIM1_OVF_ENABLE
+    // // Configuration of 16-bit Timer/Counter1 for Stopwatch update
+    // // Set the overflow prescaler to 4 ms and enable interrupt
+     TIM1_OVF_1SEC
+     TIM1_OVF_ENABLE
 
-    // Configuration of 8-bit Timer/Counter2 for Stopwatch update
-    // Set the overflow prescaler to 16 ms and enable interrupt
-    TIM2_OVF_16MS
-    TIM2_OVF_ENABLE
+    // // Configuration of 8-bit Timer/Counter2 for Stopwatch update
+    // // Set the overflow prescaler to 16 ms and enable interrupt
+    // //TIM2_OVF_16MS
+    // //TIM2_OVF_ENABLE
 
-    // Enables interrupts by setting the global interrupt mask
-    sei();  
+    // // Enables interrupts by setting the global interrupt mask
+     sei();  
 
-    oled_display();
+    // oled_display();
 
     // Infinite loop
     while (1) {
@@ -231,13 +233,14 @@ int main(void)
     twi_stop();
 } */
 
-ISR(TIMER1_OVF_vect)
+ISR(TIMER0_OVF_vect)
 {
   static uint8_t no_of_overflows = 0;
 
   no_of_overflows++;
   
-  if(no_of_overflows >=3) {
+  if(no_of_overflows >=6) {
+    no_of_overflows = 0;
     // Start ADC conversion
     ADC_START_CONV
   }
@@ -269,7 +272,6 @@ ISR(ADC_vect)
         m_data.voltage = value;
 
         itoa(m_data.voltage, string, 10);
-        uart_puts(string);
         oled_gotoxy(14, 3);
         oled_puts(string);
         //oled_puts(".");
@@ -282,7 +284,6 @@ ISR(ADC_vect)
         m_data.current = value;
 
         itoa(m_data.voltage, string, 10);
-        uart_puts(string);
         oled_gotoxy(14, 4);
         oled_puts(string);
 
@@ -293,7 +294,6 @@ ISR(ADC_vect)
         m_data.capacitance = value;
 
         itoa(m_data.voltage, string, 10);
-        uart_puts(string);
         oled_gotoxy(14, 5);
         oled_puts(string);
 
@@ -305,7 +305,6 @@ ISR(ADC_vect)
         m_data.resistance = value;
 
         itoa(m_data.voltage, string, 10);
-        uart_puts(string);
         oled_gotoxy(14, 6);
         oled_puts(string);
 
@@ -313,5 +312,37 @@ ISR(ADC_vect)
         ADC_SELECT_CHANNEL_A0
         break;
     }
+
+}
+
+ISR(TIMER1_OVF_vect)
+{
+  static uint8_t no_of_overflows = 0;
+  char string [8]; 
+
+  no_of_overflows++;
+  
+  if(no_of_overflows >= 2) {
+    no_of_overflows = 0;
+
+    uart_puts("Voltage: ");
+    itoa(m_data.voltage,string,10);
+    uart_puts(string);
+    uart_puts(" V\r\n");
+
+    /* uart_puts("Current: ");
+    uart_putc(m_data.current);
+    uart_puts(" A\r\n");
+
+    uart_puts("Capacitance: ");
+    uart_putc(m_data.capacitance);
+    uart_puts(" F\r\n");
+
+    uart_puts("Resistance: ");
+    uart_putc(m_data.resistance);
+    uart_puts(" F\r\n"); */
+
+    uart_puts("----------------\r\n");
+  }
 
 }

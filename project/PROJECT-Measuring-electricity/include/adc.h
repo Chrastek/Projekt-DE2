@@ -22,7 +22,7 @@
  * Input(s): none
  * Returns:  none
  **********************************************************************/
-#define ADC_SELECT_VOLTAGE_REF      ADMUX |= (1<<REFS0);
+#define ADC_SELECT_VOLTAGE_REF ADMUX |= (1<<REFS0);
 
 /**********************************************************************
  * Function: ADC_select_channel()
@@ -30,12 +30,12 @@
  * Input(s): none
  * Returns:  none
  **********************************************************************/
-#define ADC_SELECT_CHANNEL_A0       ADMUX &= ~((1<<MUX3) | (1<<MUX2) | (1<<MUX1) | (1<<MUX0));
-#define ADC_SELECT_CHANNEL_A1       ADMUX &= ~((1<<MUX3) | (1<<MUX2) | (1<<MUX1)); ADMUX |= (1<<MUX0);
-#define ADC_SELECT_CHANNEL_A2       ADMUX &= ~((1<<MUX3) | (1<<MUX2) | (1<<MUX0)); ADMUX |= (1<<MUX1);
-#define ADC_SELECT_CHANNEL_A3       ADMUX &= ~((1<<MUX3) | (1<<MUX2)); ADMUX |= ((1<<MUX0) | (1<<MUX1));
-#define ADC_SELECT_CHANNEL_A4       ADMUX &= ~((1<<MUX3) | (1<<MUX1) | (1<<MUX0)); ADMUX |= (1<<MUX2);
-#define ADC_SELECT_CHANNEL_A5       ADMUX &= ~((1<<MUX3) | (1<<MUX1)); ADMUX |= ((1<<MUX2) | (1<<MUX0));
+#define ADC_SELECT_CHANNEL_A0 ADMUX &= ~((1<<MUX3) | (1<<MUX2) | (1<<MUX1) | (1<<MUX0));
+#define ADC_SELECT_CHANNEL_A1 ADMUX &= ~((1<<MUX3) | (1<<MUX2) | (1<<MUX1)); ADMUX |= (1<<MUX0);
+#define ADC_SELECT_CHANNEL_A2 ADMUX &= ~((1<<MUX3) | (1<<MUX2) | (1<<MUX0)); ADMUX |= (1<<MUX1);
+#define ADC_SELECT_CHANNEL_A3 ADMUX &= ~((1<<MUX3) | (1<<MUX2)); ADMUX |= ((1<<MUX0) | (1<<MUX1));
+#define ADC_SELECT_CHANNEL_A4 ADMUX &= ~((1<<MUX3) | (1<<MUX1) | (1<<MUX0)); ADMUX |= (1<<MUX2);
+#define ADC_SELECT_CHANNEL_A5 ADMUX &= ~((1<<MUX3) | (1<<MUX1)); ADMUX |= ((1<<MUX2) | (1<<MUX0));
 
 
 /**********************************************************************
