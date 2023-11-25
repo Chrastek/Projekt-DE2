@@ -17,7 +17,6 @@
 /**
  * @file 
  * @defgroup rylich_adc ADC Library <adc.h>
- * @defgroup fryza_gpio GPIO Library <gpio.h>
  * @code #include <adc.h> @endcode
  *
  * @brief ADC library for AVR-GCC.

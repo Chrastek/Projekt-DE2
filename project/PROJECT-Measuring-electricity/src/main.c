@@ -36,11 +36,14 @@
 // Declaration of "m_data" variable with structure "Measure_data"
 
 struct Measure_data {
-   uint8_t voltage;
-   uint8_t current;
-   uint8_t capacitance;
-   uint8_t resistance;
+   float voltage;
+   float current;
+   float capacitance;
+   float resistance;
 } m_data;
+
+volatile uint8_t state = 0;
+
 
 // Flag for printing new data from sensor
 //volatile uint8_t new_sensor_data = 0;
@@ -60,7 +63,7 @@ int main(void)
     twi_init();
 
     // UART
-    uart_init(UART_BAUD_SELECT(9600, F_CPU));
+    uart_init(UART_BAUD_SELECT(115200, F_CPU));
 
     uart_puts("UART starting... ");
     uart_puts("done\r\n");
@@ -250,12 +253,12 @@ ISR(TIMER0_OVF_vect)
 ISR(ADC_vect)
 {
     static uint8_t channel = 0; //statemachine
-    uint16_t value;
-    char string[4];  // String for converted numbers by itoa()
+    float value;
+    char string[2];  // String for converted numbers by itoa()
 
     // Read converted value
     // Note that, register pair ADCH and ADCL can be read as a 16-bit value ADC
-    value = ADC;
+    value = ADC*(5.0/1023);
     // Convert "value" to "string" and display it
     // itoa(value,string,10);
     // lcd_gotoxy(1, 0); lcd_puts("value:");
@@ -266,28 +269,27 @@ ISR(ADC_vect)
     // lcd_gotoxy(13,0); lcd_puts(string);  // Put ADC value in hexadecimal
     // lcd_gotoxy(8, 1); lcd_putc(value);  // Put button name here
 
-    switch (channel)
+    switch (state)
     {
     case 0:
         m_data.voltage = value;
-
         itoa(m_data.voltage, string, 10);
         oled_gotoxy(14, 3);
         oled_puts(string);
         //oled_puts(".");
         //uart_puts(".");
 
-        channel = 1;
+        state = 1;
         ADC_SELECT_CHANNEL_A1
         break;
     case 1:
         m_data.current = value;
 
-        itoa(m_data.voltage, string, 10);
+        itoa(m_data.voltage, string, 2);
         oled_gotoxy(14, 4);
         oled_puts(string);
 
-        channel = 2;
+        state = 2;
         ADC_SELECT_CHANNEL_A2
         break;
     case 2:
@@ -297,7 +299,7 @@ ISR(ADC_vect)
         oled_gotoxy(14, 5);
         oled_puts(string);
 
-        channel = 3;
+        state = 3;
         ADC_SELECT_CHANNEL_A3
         break;
     
@@ -308,7 +310,7 @@ ISR(ADC_vect)
         oled_gotoxy(14, 6);
         oled_puts(string);
 
-        channel = 0;
+        state = 0;
         ADC_SELECT_CHANNEL_A0
         break;
     }
@@ -318,7 +320,7 @@ ISR(ADC_vect)
 ISR(TIMER1_OVF_vect)
 {
   static uint8_t no_of_overflows = 0;
-  char string [8]; 
+  char string [2]; 
 
   no_of_overflows++;
   
@@ -326,23 +328,31 @@ ISR(TIMER1_OVF_vect)
     no_of_overflows = 0;
 
     uart_puts("Voltage: ");
-    itoa(m_data.voltage,string,10);
+    dtostrf(m_data.voltage,5,3,string);
     uart_puts(string);
     uart_puts(" V\r\n");
 
-    /* uart_puts("Current: ");
-    uart_putc(m_data.current);
+    uart_puts("Current: ");
+    dtostrf(m_data.current,5,3,string);
+    uart_puts(string);
     uart_puts(" A\r\n");
 
-    uart_puts("Capacitance: ");
-    uart_putc(m_data.capacitance);
+    /* uart_puts("Capacitance: ");
+    dtostrf(m_data.capacitance,5,3,string);
+    uart_puts(string);
     uart_puts(" F\r\n");
 
     uart_puts("Resistance: ");
-    uart_putc(m_data.resistance);
-    uart_puts(" F\r\n"); */
+    dtostrf(m_data.resistance,5,3,string);
+    uart_puts(string);
+    uart_puts(" Ohm\r\n"); */
 
     uart_puts("----------------\r\n");
   }
 
+}
+
+ISR(PCINT0_vect)
+{
+    // code 
 }

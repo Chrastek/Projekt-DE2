@@ -46,6 +46,15 @@
  **********************************************************************/
 #define ADC_ENABLE      ADCSRA |= (1<<ADEN);
 
+
+/**********************************************************************
+ * Function: ADC_disable()
+ * Purpose: Disable ADC module.
+ * Input(s): none
+ * Returns:  none
+ **********************************************************************/
+#define ADC_DISABLE      ADCSRA &= ~(1<<ADEN);
+
 /**********************************************************************
  * Function: ADC_enable_interrupt()
  * Purpose:  Enable ADC interrupt.
