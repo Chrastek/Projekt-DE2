@@ -95,7 +95,7 @@ int main(void)
     
 
     // Test if sensor is ready
-    if (twi_test_address(SENSOR_ADR) == 0)
+    if (twi_test_address('5c') == 0)
         uart_puts("I2C sensor detected\r\n");
     else {
         uart_puts("[ERROR] I2C device not detected\r\n");

@@ -76,36 +76,36 @@ int main(void)
     GPIO_mode_input_pullup(&DDRD, BUTTON);
 
     //OLED
-    // oled_init(OLED_DISP_ON);
-    // oled_clrscr();
+    oled_init(OLED_DISP_ON);
+    oled_clrscr();
 
-    // oled_charMode(DOUBLESIZE);
-    // //oled_puts("OLED disp.");
-    // oled_puts("MULTIMETR");
+    oled_charMode(DOUBLESIZE);
+    oled_puts("OLED disp.");
+    oled_puts("MULTIMETR");
 
-    // oled_charMode(NORMALSIZE);
+    oled_charMode(NORMALSIZE);
 
-    // // oled_gotoxy(x, y)
-    // oled_gotoxy(0, 2);
-    // //oled_puts("128x64, SHH1106");
-    // oled_puts("DE2 - projekt 2023");
+    // oled_gotoxy(x, y)
+    oled_gotoxy(0, 2);
+    //oled_puts("128x64, SHH1106");
+    oled_puts("DE2 - projekt 2023");
 
-    // oled_gotoxy(0, 3);
-    // //oled_puts("BPC-DE2, Brno");
-    // oled_puts("Voltage:");
+    oled_gotoxy(0, 3);
+    //oled_puts("BPC-DE2, Brno");
+    oled_puts("Voltage:");
 
-    // // oled_drawLine(x1, y1, x2, y2, color)
-    // oled_drawLine(0, 25, 120, 25, WHITE);
+    // oled_drawLine(x1, y1, x2, y2, color)
+    oled_drawLine(0, 25, 120, 25, WHITE);
 
-    // oled_gotoxy(0, 4);
-    // //oled_puts("Hum     Temp");
-    // oled_puts("Current:");
+    oled_gotoxy(0, 4);
+    //oled_puts("Hum     Temp");
+    oled_puts("Current:");
 
-    // oled_gotoxy(0, 5);
-    // oled_puts("Capacitance:");
+    oled_gotoxy(0, 5);
+    oled_puts("Capacitance:");
 
-    // oled_gotoxy(0, 6);
-    // oled_puts("Resistance:");
+    oled_gotoxy(0, 6);
+    oled_puts("Resistance:");
 
     
 
