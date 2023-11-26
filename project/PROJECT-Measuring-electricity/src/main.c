@@ -17,6 +17,8 @@
 # define F_CPU 16000000  // CPU frequency in Hz required for UART_BAUD_SELECT
 #endif
 
+#define BUTTON PD7 // Pin for button switch state
+
 
 /* Includes ----------------------------------------------------------*/
 #include <avr/io.h>         // AVR device-specific IO definitions
@@ -28,10 +30,13 @@
 #include <oled.h>           // Oled library
 #include <adc.h>           // ADC library for AVR-GCC
 #include <uart.h>           // UART library for AVR-GCC
-
+#include <gpio.h>           // GPIO library for AVR-GCC
 
 
 /* Global variables --------------------------------------------------*/
+
+volatile uint8_t state = 0;
+
 /* Global variables --------------------------------------------------*/
 // Declaration of "m_data" variable with structure "Measure_data"
 
@@ -42,7 +47,6 @@ struct Measure_data {
    float resistance;
 } m_data;
 
-volatile uint8_t state = 0;
 
 
 // Flag for printing new data from sensor
@@ -67,6 +71,9 @@ int main(void)
 
     uart_puts("UART starting... ");
     uart_puts("done\r\n");
+
+    // GPIO
+    GPIO_mode_input_pullup(&DDRD, BUTTON);
 
     //OLED
     // oled_init(OLED_DISP_ON);
