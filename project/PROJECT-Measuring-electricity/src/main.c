@@ -17,7 +17,7 @@
 # define F_CPU 16000000  // CPU frequency in Hz required for UART_BAUD_SELECT
 #endif
 
-#define BUTTON PD7 // Pin for button switch state
+#define BUTTON PD3 // Pin for button switch state
 
 
 /* Includes ----------------------------------------------------------*/
@@ -31,6 +31,7 @@
 #include <adc.h>           // ADC library for AVR-GCC
 #include <uart.h>           // UART library for AVR-GCC
 #include <gpio.h>           // GPIO library for AVR-GCC
+#include <pcint.h>           // PCINT library for AVR-GCC
 
 
 /* Global variables --------------------------------------------------*/
@@ -69,6 +70,7 @@ int main(void)
     // UART
     uart_init(UART_BAUD_SELECT(115200, F_CPU));
 
+     
     uart_puts("UART starting... ");
     uart_puts("done\r\n");
 
@@ -80,7 +82,7 @@ int main(void)
     oled_clrscr();
 
     oled_charMode(DOUBLESIZE);
-    oled_puts("OLED disp.");
+    //oled_puts("OLED disp.");
     oled_puts("MULTIMETR");
 
     oled_charMode(NORMALSIZE);
@@ -90,21 +92,21 @@ int main(void)
     //oled_puts("128x64, SHH1106");
     oled_puts("DE2 - projekt 2023");
 
-    oled_gotoxy(0, 3);
+    oled_gotoxy(0, 4);
     //oled_puts("BPC-DE2, Brno");
     oled_puts("Voltage:");
 
     // oled_drawLine(x1, y1, x2, y2, color)
     oled_drawLine(0, 25, 120, 25, WHITE);
 
-    oled_gotoxy(0, 4);
+    oled_gotoxy(0, 5);
     //oled_puts("Hum     Temp");
     oled_puts("Current:");
 
-    oled_gotoxy(0, 5);
+    oled_gotoxy(0, 6);
     oled_puts("Capacitance:");
 
-    oled_gotoxy(0, 6);
+    oled_gotoxy(0, 7);
     oled_puts("Resistance:");
 
     
@@ -124,41 +126,42 @@ int main(void)
     //  * 
     // ***************************************************/
 
-    // // Configure Analog-to-Digital Convertion unit
-    // // Select ADC voltage reference to "AVcc with external capacitor at AREF pin"
-    // //ADMUX |= (1<<REFS0);
+    // Configure Analog-to-Digital Convertion unit
+    // Select ADC voltage reference to "AVcc with external capacitor at AREF pin"
     ADC_SELECT_VOLTAGE_REF
 
     // Enable ADC module
-    //ADCSRA |= (1<<ADEN);
     ADC_ENABLE
 
 
     // Enable conversion complete interrupt
-    //ADCSRA |= (1<<ADIE);
     ADC_ENABLE_INTERRUPT
 
     // Set clock prescaler to 128
-    //ADCSRA |= ((1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0));
     ADC_SET_PRESCALER_128 
 
-    // // Configuration of 8-bit Timer/Counter0 for Stopwatch update
-    // // Set the overflow prescaler to 16 ms and enable interrupt
+    // Configuration of 8-bit Timer/Counter0 for Stopwatch update
+    // Set the overflow prescaler to 16 ms and enable interrupt
     TIM0_OVF_16MS
     TIM0_OVF_ENABLE
 
-    // // Configuration of 16-bit Timer/Counter1 for Stopwatch update
-    // // Set the overflow prescaler to 4 ms and enable interrupt
+    // Configuration of 16-bit Timer/Counter1 for Stopwatch update
+    // Set the overflow prescaler to 4 ms and enable interrupt
      TIM1_OVF_1SEC
      TIM1_OVF_ENABLE
 
-    // // Configuration of 8-bit Timer/Counter2 for Stopwatch update
-    // // Set the overflow prescaler to 16 ms and enable interrupt
-    // //TIM2_OVF_16MS
-    // //TIM2_OVF_ENABLE
+    // Configuration of 8-bit Timer/Counter2 for Stopwatch update
+    // Set the overflow prescaler to 16 ms and enable interrupt
+    //TIM2_OVF_16MS
+    //TIM2_OVF_ENABLE
 
-    // // Enables interrupts by setting the global interrupt mask
-     sei();  
+    // Configuration of External Interrupt of INT0
+    // Set the rising edge of INT0 for an interrupt request
+    PCINT0_TRIGGER_RISE
+    PCINT0_ENABLE 
+
+    // Enables interrupts by setting the global interrupt mask
+    sei(); 
 
     // oled_display();
 
@@ -259,7 +262,6 @@ ISR(TIMER0_OVF_vect)
 
 ISR(ADC_vect)
 {
-    static uint8_t channel = 0; //statemachine
     float value;
     char string[2];  // String for converted numbers by itoa()
 
@@ -280,48 +282,44 @@ ISR(ADC_vect)
     {
     case 0:
         m_data.voltage = value;
-        itoa(m_data.voltage, string, 10);
-        oled_gotoxy(14, 3);
+        dtostrf(m_data.voltage,5,3,string);
+        oled_gotoxy(13, 4);
         oled_puts(string);
-        //oled_puts(".");
-        //uart_puts(".");
+        oled_puts(" V");
 
-        state = 1;
-        ADC_SELECT_CHANNEL_A1
         break;
     case 1:
         m_data.current = value;
 
-        itoa(m_data.voltage, string, 2);
-        oled_gotoxy(14, 4);
+        dtostrf(m_data.current,5,3,string);
+        oled_gotoxy(13, 5);
         oled_puts(string);
+        oled_puts(" A");
 
-        state = 2;
-        ADC_SELECT_CHANNEL_A2
         break;
     case 2:
         m_data.capacitance = value;
 
-        itoa(m_data.voltage, string, 10);
-        oled_gotoxy(14, 5);
+        dtostrf(m_data.capacitance,5,3,string);
+        oled_gotoxy(13, 6);
         oled_puts(string);
+        oled_puts(" F");
 
-        state = 3;
-        ADC_SELECT_CHANNEL_A3
         break;
     
     default:
         m_data.resistance = value;
 
-        itoa(m_data.voltage, string, 10);
-        oled_gotoxy(14, 6);
+        dtostrf(m_data.resistance,5,3,string);
+        oled_gotoxy(13, 7);
         oled_puts(string);
+        oled_puts(" ");
+        oled_puts("Ohm");
 
-        state = 0;
-        ADC_SELECT_CHANNEL_A0
         break;
     }
 
+    oled_display();
 }
 
 ISR(TIMER1_OVF_vect)
@@ -343,6 +341,8 @@ ISR(TIMER1_OVF_vect)
     dtostrf(m_data.current,5,3,string);
     uart_puts(string);
     uart_puts(" A\r\n");
+    itoa(state,string,10);
+    uart_puts(string);
 
     /* uart_puts("Capacitance: ");
     dtostrf(m_data.capacitance,5,3,string);
@@ -361,5 +361,24 @@ ISR(TIMER1_OVF_vect)
 
 ISR(PCINT0_vect)
 {
-    // code 
+    switch (state)
+    {
+    case 0:
+        state = 1;
+        ADC_SELECT_CHANNEL_A1
+        break;
+    case 1:
+        state = 2;
+        ADC_SELECT_CHANNEL_A2
+        break;
+    case 2:
+        state = 3;
+        ADC_SELECT_CHANNEL_A3
+        break;
+    
+    default:
+        state = 0;
+        ADC_SELECT_CHANNEL_A0
+        break;
+    }
 }

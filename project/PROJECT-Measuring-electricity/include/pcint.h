@@ -1,4 +1,3 @@
-
 #ifndef PCINT_H
 # define PCINT_H
 
@@ -40,7 +39,7 @@
 /* Defines -----------------------------------------------------------*/
 /**
  * @name  Definitions for PCINT 
- * @note  t_OVF = 1/F_CPU * prescaler * 2^n where n = 16, F_CPU = 16 MHz
+ * @note  
  */
 
 /** @brief  The low level of INT0 generates an interrupt request. */
@@ -63,13 +62,13 @@
 #define PCINT1_TRIGGER_RISE EICRA |= ((1 << ISC01) | (1 << ISC00));   
 
 
-/** @brief  INT0: External Interrupt Request 0 Enable. */   
-#define PCINT0_ENABLE EIMSK &= ~(1 << INTF1); EIMSK |= (1 << INTF0);  
+/** @brief  INT0: External Interrupt Request Enable. */   
+#define PCINT0_ENABLE  EIMSK |= (1 << INTF0);  
 
-/** @brief  INT1: External Interrupt Request 1 Enable. */   
-#define PCINT1_ENABLE EIMSK |= (1 << INTF1); EIMSK &= ~(1 << INTF0);  
+/** @brief  INT1: External Interrupt Request Enable. */   
+#define PCINT1_ENABLE EIMSK |= (1 << INTF1);  
 
-
+// Macros for PCINT23:0 pins
 
 #endif
 
