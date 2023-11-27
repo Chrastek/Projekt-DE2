@@ -17,8 +17,10 @@
 # define F_CPU 16000000  // CPU frequency in Hz required for UART_BAUD_SELECT
 #endif
 
-#define BUTTON PD3 // Pin for button switch state
-
+#define BUTTON PB0 // Pin for button switch state
+#define BUTTON1 PD2 // Pin for button of switch state
+#define TOLERANCE 15 // Tolerance for ADC value of change
+#define DEC 2 // The number of bits of the decimal part of the measured values
 
 /* Includes ----------------------------------------------------------*/
 #include <avr/io.h>         // AVR device-specific IO definitions
@@ -32,6 +34,7 @@
 #include <uart.h>           // UART library for AVR-GCC
 #include <gpio.h>           // GPIO library for AVR-GCC
 #include <pcint.h>           // PCINT library for AVR-GCC
+
 
 
 /* Global variables --------------------------------------------------*/
@@ -74,8 +77,11 @@ int main(void)
     uart_puts("UART starting... ");
     uart_puts("done\r\n");
 
+    
+
     // GPIO
-    GPIO_mode_input_pullup(&DDRD, BUTTON);
+    GPIO_mode_input_pullup(&DDRB, BUTTON);
+    GPIO_mode_input_pullup(&DDRD, BUTTON1);
 
     //OLED
     oled_init(OLED_DISP_ON);
@@ -83,7 +89,8 @@ int main(void)
 
     oled_charMode(DOUBLESIZE);
     //oled_puts("OLED disp.");
-    oled_puts("MULTIMETR");
+    //oled_puts("MULTIMETR");
+    oled_puts("EL.CITY");
 
     oled_charMode(NORMALSIZE);
 
@@ -133,7 +140,6 @@ int main(void)
     // Enable ADC module
     ADC_ENABLE
 
-
     // Enable conversion complete interrupt
     ADC_ENABLE_INTERRUPT
 
@@ -155,10 +161,13 @@ int main(void)
     //TIM2_OVF_16MS
     //TIM2_OVF_ENABLE
 
-    // Configuration of External Interrupt of INT0
-    // Set the rising edge of INT0 for an interrupt request
-    PCINT0_TRIGGER_RISE
-    PCINT0_ENABLE 
+    
+
+    // Configuration of External Interrupt of INT0 - PORT D PIN2
+    // Set the rising edge of INT0 for an interrupt request and enable it
+    INT0_TRIGGER_RISE 
+    INT0_ENABLE 
+    
 
     // Enables interrupts by setting the global interrupt mask
     sei(); 
@@ -252,7 +261,7 @@ ISR(TIMER0_OVF_vect)
 
   no_of_overflows++;
   
-  if(no_of_overflows >=6) {
+  if(no_of_overflows >=3) {
     no_of_overflows = 0;
     // Start ADC conversion
     ADC_START_CONV
@@ -264,6 +273,7 @@ ISR(ADC_vect)
 {
     float value;
     char string[2];  // String for converted numbers by itoa()
+    static uint8_t internal_state = 0;
 
     // Read converted value
     // Note that, register pair ADCH and ADCL can be read as a 16-bit value ADC
@@ -281,40 +291,86 @@ ISR(ADC_vect)
     switch (state)
     {
     case 0:
-        m_data.voltage = value;
-        dtostrf(m_data.voltage,5,3,string);
-        oled_gotoxy(13, 4);
-        oled_puts(string);
-        oled_puts(" V");
-
+            m_data.voltage = value;
+            dtostrf(m_data.voltage,5,DEC,string);
+            oled_gotoxy(13, 4);
+            oled_puts(string);
+            oled_puts(" V");
         break;
     case 1:
-        m_data.current = value;
+            m_data.current = value;
 
-        dtostrf(m_data.current,5,3,string);
-        oled_gotoxy(13, 5);
-        oled_puts(string);
-        oled_puts(" A");
-
+            dtostrf(m_data.current,5,DEC,string);
+            oled_gotoxy(13, 5);
+            oled_puts(string);
+            oled_puts(" A");
         break;
     case 2:
-        m_data.capacitance = value;
+            m_data.capacitance = value;
 
-        dtostrf(m_data.capacitance,5,3,string);
-        oled_gotoxy(13, 6);
-        oled_puts(string);
-        oled_puts(" F");
+            dtostrf(m_data.capacitance,5,DEC,string);
+            oled_gotoxy(13, 6);
+            oled_puts(string);
+            oled_puts(" F");
+        break;
+    case 3:
+            m_data.resistance = value;
 
+            dtostrf(m_data.resistance,5,DEC,string);
+            oled_gotoxy(13, 7);
+            oled_puts(string);
+            oled_puts(" ");
+            oled_puts("Ohm");
         break;
     
     default:
-        m_data.resistance = value;
+        switch (internal_state)
+        {
+        case 0:
+                m_data.voltage = value;
+                dtostrf(m_data.voltage,5,DEC,string);
+                oled_gotoxy(13, 4);
+                oled_puts(string);
+                oled_puts(" V");
+            
+            internal_state = 1;
+            ADC_SELECT_CHANNEL_A1
+            break;
+        case 1:
+                m_data.current = value;
 
-        dtostrf(m_data.resistance,5,3,string);
-        oled_gotoxy(13, 7);
-        oled_puts(string);
-        oled_puts(" ");
-        oled_puts("Ohm");
+                dtostrf(m_data.current,5,DEC,string);
+                oled_gotoxy(13, 5);
+                oled_puts(string);
+                oled_puts(" A");
+            
+            internal_state = 2;
+            ADC_SELECT_CHANNEL_A2
+            break;
+        case 2:
+                m_data.capacitance = value;
+
+                dtostrf(m_data.capacitance,5,DEC,string);
+                oled_gotoxy(13, 6);
+                oled_puts(string);
+                oled_puts(" F");
+            
+            internal_state = 3;
+            ADC_SELECT_CHANNEL_A3
+            break;
+        default:
+                m_data.resistance = value;
+
+                dtostrf(m_data.resistance,5,DEC,string);
+                oled_gotoxy(13, 7);
+                oled_puts(string);
+                oled_puts(" ");
+                oled_puts("Ohm");            
+            internal_state = 0;
+            ADC_SELECT_CHANNEL_A0
+            break;
+
+        }
 
         break;
     }
@@ -332,7 +388,7 @@ ISR(TIMER1_OVF_vect)
   if(no_of_overflows >= 2) {
     no_of_overflows = 0;
 
-    uart_puts("Voltage: ");
+    /* uart_puts("Voltage: ");
     dtostrf(m_data.voltage,5,3,string);
     uart_puts(string);
     uart_puts(" V\r\n");
@@ -343,8 +399,9 @@ ISR(TIMER1_OVF_vect)
     uart_puts(" A\r\n");
     itoa(state,string,10);
     uart_puts(string);
+    
 
-    /* uart_puts("Capacitance: ");
+    uart_puts("Capacitance: ");
     dtostrf(m_data.capacitance,5,3,string);
     uart_puts(string);
     uart_puts(" F\r\n");
@@ -352,15 +409,22 @@ ISR(TIMER1_OVF_vect)
     uart_puts("Resistance: ");
     dtostrf(m_data.resistance,5,3,string);
     uart_puts(string);
-    uart_puts(" Ohm\r\n"); */
-
+    uart_puts(" Ohm\r\n");
+ */
     uart_puts("----------------\r\n");
   }
 
 }
 
-ISR(PCINT0_vect)
+
+ISR(INT0_vect)
 {
+    static uint8_t count = 0;
+    // vyresit debounce
+    //for(uint16_t i = 0; i<1000; i++){ ;} // delay for debounce pushbutton
+    cli();
+    char string [2];
+    
     switch (state)
     {
     case 0:
@@ -375,10 +439,24 @@ ISR(PCINT0_vect)
         state = 3;
         ADC_SELECT_CHANNEL_A3
         break;
+    case 3:
+        state = 4;
+        break;
     
     default:
         state = 0;
         ADC_SELECT_CHANNEL_A0
         break;
     }
+    count++;
+    oled_gotoxy(9, 4);
+    itoa(count,string,10);
+    oled_puts(string);
+    sei();
 }
+
+// Tolerance 
+// uart
+// mereni velicin, rozsahy, jednotky,
+// vzhled ? 
+// dokumentace
