@@ -52,6 +52,17 @@ struct Measure_data {
 } m_data;
 
 
+void Clear_display_values(void)
+{
+    oled_gotoxy(13, 4);
+    oled_puts("       ");
+    oled_gotoxy(13, 5);
+    oled_puts("       ");
+    oled_gotoxy(13, 6);
+    oled_puts("       ");
+    oled_gotoxy(13, 7);
+    oled_puts("        ");
+}
 
 // Flag for printing new data from sensor
 //volatile uint8_t new_sensor_data = 0;
@@ -319,7 +330,6 @@ ISR(ADC_vect)
             dtostrf(m_data.resistance,5,DEC,string);
             oled_gotoxy(13, 7);
             oled_puts(string);
-            oled_puts(" ");
             oled_puts("Ohm");
         break;
     
@@ -364,7 +374,6 @@ ISR(ADC_vect)
                 dtostrf(m_data.resistance,5,DEC,string);
                 oled_gotoxy(13, 7);
                 oled_puts(string);
-                oled_puts(" ");
                 oled_puts("Ohm");            
             internal_state = 0;
             ADC_SELECT_CHANNEL_A0
@@ -424,7 +433,7 @@ ISR(INT0_vect)
     //for(uint16_t i = 0; i<1000; i++){ ;} // delay for debounce pushbutton
     cli();
     char string [2];
-    
+    Clear_display_values();
     switch (state)
     {
     case 0:
@@ -455,8 +464,11 @@ ISR(INT0_vect)
     sei();
 }
 
-// Tolerance 
+
+
+// Tolerance změn hodnot
 // uart
 // mereni velicin, rozsahy, jednotky,
-// vzhled ? 
+// vzhled ? - displej, přepínání, electrocity vs multimetr
+// vycistit kód
 // dokumentace
