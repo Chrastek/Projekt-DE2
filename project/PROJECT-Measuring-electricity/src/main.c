@@ -21,6 +21,12 @@
 #define BUTTON1 PD2 // Pin for button of switch state
 #define TOLERANCE 15 // Tolerance for ADC value of change
 #define DEC 2 // The number of bits of the decimal part of the measured values
+#define REF_RESISTOR 1000
+#define REF_VOLTAGE 5.0
+
+#define MVPERAMP 66
+#define ACSOFTSET 2500
+
 
 /* Includes ----------------------------------------------------------*/
 #include <avr/io.h>         // AVR device-specific IO definitions
@@ -55,11 +61,11 @@ struct Measure_data {
 void Clear_display_values(void)
 {
     oled_gotoxy(13, 4);
-    oled_puts("       ");
+    oled_puts("        ");
     oled_gotoxy(13, 5);
-    oled_puts("       ");
+    oled_puts("        ");
     oled_gotoxy(13, 6);
-    oled_puts("       ");
+    oled_puts("        ");
     oled_gotoxy(13, 7);
     oled_puts("        ");
 }
@@ -288,12 +294,16 @@ ISR(ADC_vect)
 
     // Read converted value
     // Note that, register pair ADCH and ADCL can be read as a 16-bit value ADC
-    value = ADC*(5.0/1023);
+    value = ADC*(REF_VOLTAGE/1023);
     // Convert "value" to "string" and display it
     // itoa(value,string,10);
     // lcd_gotoxy(1, 0); lcd_puts("value:");
     // lcd_gotoxy(3, 1); lcd_puts("key:");
     // lcd_gotoxy(8, 0); lcd_puts(string);  // Put ADC value in decimal
+
+    oled_gotoxy(9, 4);
+    itoa(ADC,string,10);
+    oled_puts(string);
 
     // itoa(value,string,16);
     // lcd_gotoxy(13,0); lcd_puts(string);  // Put ADC value in hexadecimal
@@ -309,25 +319,26 @@ ISR(ADC_vect)
             oled_puts(" V");
         break;
     case 1:
-            m_data.current = value;
+            m_data.current = ((value*1000) -ACSOFTSET)/MVPERAMP;
 
             dtostrf(m_data.current,5,DEC,string);
             oled_gotoxy(13, 5);
             oled_puts(string);
-            oled_puts(" A");
+            oled_puts(" mA");
         break;
     case 2:
             m_data.capacitance = value;
 
-            dtostrf(m_data.capacitance,5,DEC,string);
+            dtostrf(m_data.capacitance,5,DEC-2,string);
             oled_gotoxy(13, 6);
             oled_puts(string);
             oled_puts(" F");
         break;
     case 3:
-            m_data.resistance = value;
 
-            dtostrf(m_data.resistance,5,DEC,string);
+            m_data.resistance = (REF_RESISTOR*REF_VOLTAGE/value)-REF_RESISTOR;
+
+            dtostrf(m_data.resistance,5,DEC-2,string);
             oled_gotoxy(13, 7);
             oled_puts(string);
             oled_puts("Ohm");
@@ -347,12 +358,12 @@ ISR(ADC_vect)
             ADC_SELECT_CHANNEL_A1
             break;
         case 1:
-                m_data.current = value;
+                m_data.current = value*10;
 
                 dtostrf(m_data.current,5,DEC,string);
                 oled_gotoxy(13, 5);
                 oled_puts(string);
-                oled_puts(" A");
+                oled_puts(" mA");
             
             internal_state = 2;
             ADC_SELECT_CHANNEL_A2
@@ -360,7 +371,7 @@ ISR(ADC_vect)
         case 2:
                 m_data.capacitance = value;
 
-                dtostrf(m_data.capacitance,5,DEC,string);
+                dtostrf(m_data.capacitance,5,DEC-2,string);
                 oled_gotoxy(13, 6);
                 oled_puts(string);
                 oled_puts(" F");
@@ -369,9 +380,9 @@ ISR(ADC_vect)
             ADC_SELECT_CHANNEL_A3
             break;
         default:
-                m_data.resistance = value;
+                m_data.resistance = (REF_RESISTOR*REF_VOLTAGE/value)-REF_RESISTOR;
 
-                dtostrf(m_data.resistance,5,DEC,string);
+                dtostrf(m_data.resistance,5,DEC-2,string);
                 oled_gotoxy(13, 7);
                 oled_puts(string);
                 oled_puts("Ohm");            
@@ -389,39 +400,39 @@ ISR(ADC_vect)
 
 ISR(TIMER1_OVF_vect)
 {
-  static uint8_t no_of_overflows = 0;
+  //static uint8_t no_of_overflows = 0;
   char string [2]; 
 
-  no_of_overflows++;
+  //no_of_overflows++;
   
-  if(no_of_overflows >= 2) {
-    no_of_overflows = 0;
+//   if(no_of_overflows >= 2) {
+//     no_of_overflows = 0;
 
-    /* uart_puts("Voltage: ");
-    dtostrf(m_data.voltage,5,3,string);
+    uart_puts("Voltage: ");
+    dtostrf(m_data.voltage,5,DEC,string);
     uart_puts(string);
     uart_puts(" V\r\n");
 
     uart_puts("Current: ");
-    dtostrf(m_data.current,5,3,string);
+    dtostrf(m_data.current,5,DEC,string);
     uart_puts(string);
     uart_puts(" A\r\n");
     itoa(state,string,10);
     uart_puts(string);
     
-
+/*
     uart_puts("Capacitance: ");
-    dtostrf(m_data.capacitance,5,3,string);
+    dtostrf(m_data.capacitance,5,DEC,string);
     uart_puts(string);
     uart_puts(" F\r\n");
-
+ 
     uart_puts("Resistance: ");
-    dtostrf(m_data.resistance,5,3,string);
+    dtostrf(m_data.resistance,5,DEC-2,string);
     uart_puts(string);
-    uart_puts(" Ohm\r\n");
- */
+    uart_puts(" Ohm\r\n"); */
+
     uart_puts("----------------\r\n");
-  }
+  //}
 
 }
 
@@ -458,17 +469,16 @@ ISR(INT0_vect)
         break;
     }
     count++;
-    oled_gotoxy(9, 4);
-    itoa(count,string,10);
-    oled_puts(string);
+   /*  oled_gotoxy(9, 4);
+    itoa(ADC,string,10);
+    oled_puts(string); */
     sei();
 }
 
 
 
-// Tolerance změn hodnot
-// uart
-// mereni velicin, rozsahy, jednotky,
-// vzhled ? - displej, přepínání, electrocity vs multimetr
+// uart vysrat se na to 
+// dodelat capacitanci
+// 
 // vycistit kód
 // dokumentace
