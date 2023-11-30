@@ -19,9 +19,13 @@
 
 #define BUTTON PB0 // Pin for button switch state
 #define BUTTON1 PD2 // Pin for button of switch state
+#define CHARGE_PIN PD0 // Pin for charge measuring capacitor
+#define DISCHARGE_PIN PD1 // Pin for discharge measuring capacitor
 #define TOLERANCE 15 // Tolerance for ADC value of change
 #define DEC 2 // The number of bits of the decimal part of the measured values
 #define REF_RESISTOR 1000
+#define REF_RESISTOR_CAP 10000.0
+#define TIMER2_LENGTH 0.000016
 #define REF_VOLTAGE 5.0
 
 #define MVPERAMP 66
@@ -54,6 +58,7 @@ struct Measure_data {
    float voltage;
    float current;
    float capacitance;
+   float capacit_value;
    float resistance;
 } m_data;
 
@@ -170,14 +175,14 @@ int main(void)
 
     // Configuration of 16-bit Timer/Counter1 for Stopwatch update
     // Set the overflow prescaler to 4 ms and enable interrupt
-     TIM1_OVF_1SEC
-     TIM1_OVF_ENABLE
+    TIM1_OVF_1SEC
+    TIM1_OVF_ENABLE
 
     // Configuration of 8-bit Timer/Counter2 for Stopwatch update
     // Set the overflow prescaler to 16 ms and enable interrupt
-    //TIM2_OVF_16MS
-    //TIM2_OVF_ENABLE
-
+    // TIM2_OVF_16U
+    // TIM2_OVF_ENABLE
+    
     
 
     // Configuration of External Interrupt of INT0 - PORT D PIN2
@@ -327,15 +332,20 @@ ISR(ADC_vect)
             oled_puts(" mA");
         break;
     case 2:
-            m_data.capacitance = value;
+            // Configuration of 8-bit Timer/Counter2 for Stopwatch update
+            // Set the overflow prescaler to 16 ms and enable interrupt
+            TIM2_OVF_16U
+            TIM2_OVF_ENABLE
+            m_data.capacit_value = value;
 
             dtostrf(m_data.capacitance,5,DEC-2,string);
             oled_gotoxy(13, 6);
             oled_puts(string);
-            oled_puts(" F");
+            oled_puts(" mF");
         break;
     case 3:
-
+            // Disable TIMER2 interrupt
+            TIM2_OVF_DISABLE
             m_data.resistance = (REF_RESISTOR*REF_VOLTAGE/value)-REF_RESISTOR;
 
             dtostrf(m_data.resistance,5,DEC-2,string);
@@ -369,23 +379,27 @@ ISR(ADC_vect)
             ADC_SELECT_CHANNEL_A2
             break;
         case 2:
-                m_data.capacitance = value;
+            // Configuration of 8-bit Timer/Counter2 for Stopwatch update
+            // Set the overflow prescaler to 16 ms and enable interrupt
+            TIM2_OVF_16U
+            TIM2_OVF_ENABLE
+            m_data.capacit_value = value;
 
-                dtostrf(m_data.capacitance,5,DEC-2,string);
-                oled_gotoxy(13, 6);
-                oled_puts(string);
-                oled_puts(" F");
-            
-            internal_state = 3;
-            ADC_SELECT_CHANNEL_A3
+            dtostrf(m_data.capacitance,5,DEC-2,string);
+            oled_gotoxy(13, 6);
+            oled_puts(string);
+            oled_puts(" mF");
             break;
+            
         default:
-                m_data.resistance = (REF_RESISTOR*REF_VOLTAGE/value)-REF_RESISTOR;
+            // Disable TIMER2 interrupt     // vymyslet jak používat timer v měření všech AI najednou ????
+            //TIM2_OVF_DISABLE        
+            m_data.resistance = (REF_RESISTOR*REF_VOLTAGE/value)-REF_RESISTOR;
 
-                dtostrf(m_data.resistance,5,DEC-2,string);
-                oled_gotoxy(13, 7);
-                oled_puts(string);
-                oled_puts("Ohm");            
+            dtostrf(m_data.resistance,5,DEC-2,string);
+            oled_gotoxy(13, 7);
+            oled_puts(string);
+            oled_puts("Ohm");            
             internal_state = 0;
             ADC_SELECT_CHANNEL_A0
             break;
@@ -436,6 +450,56 @@ ISR(TIMER1_OVF_vect)
 
 }
 
+ISR(TIMER2_OVF_vect)
+{
+    static uint32_t capacit_time = 0;       // big number for sufficient time space
+    static uint8_t measure_run = 0;
+    static uint8_t state = 0;
+
+    if (measure_run)
+    {
+        capacit_time++;
+        
+        if (m_data.capacit_value > 647)
+        {
+            measure_run = 0;
+
+            m_data.capacitance = (((float)(capacit_time*TIMER2_LENGTH))/REF_RESISTOR_CAP)*1000; // microFarads
+            state = 0;
+
+        }
+    }
+    else
+    {
+        switch (state)
+        {
+        case 0: // discharge
+            GPIO_mode_output(&DDRD,DISCHARGE_PIN);
+            GPIO_write_low(&DDRD, DISCHARGE_PIN);
+            if (m_data.capacit_value > 0)
+            {
+                 ; // discharging capacitor
+            }
+            else
+            {
+                GPIO_mode_input_pullup(&DDRD, DISCHARGE_PIN); 
+                 state=1;
+            }
+            
+            break;
+        case 1: // charge
+            GPIO_mode_output(&DDRD, CHARGE_PIN);
+            GPIO_write_high(&DDRD, CHARGE_PIN);
+            measure_run = 1;
+            capacit_time = 0;
+            break;
+        
+        default:
+            state = 0;
+            break;
+        }
+    }
+}
 
 ISR(INT0_vect)
 {
