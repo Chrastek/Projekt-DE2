@@ -309,6 +309,9 @@ ISR(ADC_vect)
     oled_gotoxy(9, 4);
     itoa(ADC,string,10);
     oled_puts(string);
+    oled_gotoxy(9, 5);
+    itoa(value,string,10);
+    oled_puts(string);
 
     // itoa(value,string,16);
     // lcd_gotoxy(13,0); lcd_puts(string);  // Put ADC value in hexadecimal
@@ -324,7 +327,7 @@ ISR(ADC_vect)
             oled_puts(" V");
         break;
     case 1:
-            m_data.current = ((value*1000) -ACSOFTSET)/MVPERAMP;
+            m_data.current = ((value*1000) - ACSOFTSET)/MVPERAMP;
 
             dtostrf(m_data.current,5,DEC,string);
             oled_gotoxy(13, 5);
@@ -355,6 +358,12 @@ ISR(ADC_vect)
         break;
     
     default:
+    
+        // Configuration of 8-bit Timer/Counter2 for Stopwatch update
+        // Set the overflow prescaler to 16 ms and enable interrupt
+        TIM2_OVF_16U
+        TIM2_OVF_ENABLE
+
         switch (internal_state)
         {
         case 0:
@@ -379,21 +388,16 @@ ISR(ADC_vect)
             ADC_SELECT_CHANNEL_A2
             break;
         case 2:
-            // Configuration of 8-bit Timer/Counter2 for Stopwatch update
-            // Set the overflow prescaler to 16 ms and enable interrupt
-            TIM2_OVF_16U
-            TIM2_OVF_ENABLE
             m_data.capacit_value = value;
 
             dtostrf(m_data.capacitance,5,DEC-2,string);
             oled_gotoxy(13, 6);
             oled_puts(string);
             oled_puts(" mF");
+            internal_state = 3;
             break;
             
         default:
-            // Disable TIMER2 interrupt     // vymyslet jak používat timer v měření všech AI najednou ????
-            //TIM2_OVF_DISABLE        
             m_data.resistance = (REF_RESISTOR*REF_VOLTAGE/value)-REF_RESISTOR;
 
             dtostrf(m_data.resistance,5,DEC-2,string);
@@ -405,7 +409,8 @@ ISR(ADC_vect)
             break;
 
         }
-
+        // Disable TIMER2 interrupt     // vymyslet jak používat timer v měření všech AI najednou ????
+        TIM2_OVF_DISABLE
         break;
     }
 
@@ -512,19 +517,19 @@ ISR(INT0_vect)
     switch (state)
     {
     case 0:
-        state = 1;
+        state++;
         ADC_SELECT_CHANNEL_A1
         break;
     case 1:
-        state = 2;
+        state++;
         ADC_SELECT_CHANNEL_A2
         break;
     case 2:
-        state = 3;
+        state++;
         ADC_SELECT_CHANNEL_A3
         break;
     case 3:
-        state = 4;
+        state++;       // no select channel
         break;
     
     default:
