@@ -17,15 +17,17 @@
 # define F_CPU 16000000  // CPU frequency in Hz required for UART_BAUD_SELECT
 #endif
 
+#define TEST_PIN PD4
+
 #define BUTTON PB0 // Pin for button switch state
 #define BUTTON1 PD2 // Pin for button of switch state
-#define CHARGE_PIN PD0 // Pin for charge measuring capacitor
-#define DISCHARGE_PIN PD1 // Pin for discharge measuring capacitor
+#define CHARGE_PIN PD5 // Pin for charge measuring capacitor - Arduino PIN 8
+#define DISCHARGE_PIN PD6 // Pin for discharge measuring capacitor - Arduino PIN 9
 #define TOLERANCE 15 // Tolerance for ADC value of change
 #define DEC 2 // The number of bits of the decimal part of the measured values
 #define REF_RESISTOR 1000
-#define REF_RESISTOR_CAP 10000.0
-#define TIMER2_LENGTH 0.000016
+#define REF_RESISTOR_CAP 10000.0F
+#define TIMER2_LENGTH 0.001
 #define REF_VOLTAGE 5.0
 
 #define MVPERAMP 66
@@ -49,7 +51,10 @@
 
 /* Global variables --------------------------------------------------*/
 
-volatile uint8_t state = 0;
+volatile uint8_t state = 0;         // state machine
+
+volatile uint8_t butt_down = 0;     // buttun down flag
+
 
 /* Global variables --------------------------------------------------*/
 // Declaration of "m_data" variable with structure "Measure_data"
@@ -65,6 +70,10 @@ struct Measure_data {
 
 void Clear_display_values(void)
 {
+    oled_gotoxy(9, 4);
+    oled_puts("     ");
+    oled_gotoxy(9, 5);
+    oled_puts("     ");
     oled_gotoxy(13, 4);
     oled_puts("        ");
     oled_gotoxy(13, 5);
@@ -88,7 +97,7 @@ void Clear_display_values(void)
 int main(void)
 {
     //char string[2];  // String for converting numbers by itoa()
-
+    
     // TWI
     twi_init();
 
@@ -175,14 +184,13 @@ int main(void)
 
     // Configuration of 16-bit Timer/Counter1 for Stopwatch update
     // Set the overflow prescaler to 4 ms and enable interrupt
-    TIM1_OVF_1SEC
+    TIM1_OVF_33MS
     TIM1_OVF_ENABLE
 
     // Configuration of 8-bit Timer/Counter2 for Stopwatch update
     // Set the overflow prescaler to 16 ms and enable interrupt
-    // TIM2_OVF_16U
+    // TIM2_OVF_1MS
     // TIM2_OVF_ENABLE
-    
     
 
     // Configuration of External Interrupt of INT0 - PORT D PIN2
@@ -194,53 +202,10 @@ int main(void)
     // Enables interrupts by setting the global interrupt mask
     sei(); 
 
-    // oled_display();
-
     // Infinite loop
     while (1) {
-
         /* Empty loop. All subsequent operations are performed exclusively 
          * inside interrupt service routines ISRs */
-
-        /* if (new_sensor_data == 1) {
-            itoa(dht12.hum_int, string, 10);
-            uart_puts(string);
-            oled_gotoxy(0, 6);
-            oled_puts(string);
-            oled_puts(".");
-            uart_puts(".");
-
-            itoa(dht12.hum_dec, string, 10);
-            uart_puts(string);
-            oled_gotoxy(3, 6);
-            oled_puts(string);
-            oled_puts(" %\r\n");
-            uart_puts(" %\r\n");
-
-            itoa(dht12.temp_int, string, 10);
-            uart_puts(string);
-            oled_gotoxy(8, 6);
-            oled_puts(string);
-            oled_puts(".");
-            uart_puts(".");
-
-            itoa(dht12.temp_dec, string, 10);
-            uart_puts(string);
-            oled_gotoxy(11, 6);
-            oled_puts(string);
-            oled_puts(" °C\r\n");
-            uart_puts(" °C\r\n");
-            itoa(dht12.checksum, string, 10);
-            uart_puts(string);
-            uart_puts("\r\n");
-
-            
-            // Copy buffer to display RAM
-            oled_display();
-
-            // Do not print it again and wait for the new data
-            new_sensor_data = 0; 
-        }*/
     }
 
     // Will never reach this
@@ -253,42 +218,138 @@ int main(void)
 * Function: Timer/Counter1 overflow interrupt
 * Purpose:  Read temperature and humidity from DHT12, SLA = 0x5c.
 **********************************************************************/
-/* ISR(TIMER1_OVF_vect)
-{
-    // Test ACK from sensor
-    twi_start();
-    if (twi_write((SENSOR_ADR<<1) | TWI_WRITE) == 0) {
-        // Set internal memory location
-        twi_write(0x00);
-        twi_stop();
-        //twi_write(SENSOR_TEMP_MEM);
-        //twi_stop();
-        // Read data from internal memory
-        twi_start();
-        twi_write((SENSOR_ADR<<1) | TWI_READ);
-        dht12.hum_int = twi_read(TWI_ACK);
-        dht12.hum_dec = twi_read(TWI_ACK);
-        dht12.temp_int = twi_read(TWI_ACK);
-        dht12.temp_dec = twi_read(TWI_ACK);
-        dht12.checksum = twi_read(TWI_NACK);
-
-        new_sensor_data = 1;
-    }
-    twi_stop();
-} */
 
 ISR(TIMER0_OVF_vect)
 {
+   
+    static uint8_t no_of_overflows = 0;
+
+    no_of_overflows++;
+  
+    if(no_of_overflows >=3) {
+        no_of_overflows = 0;
+        // Start ADC conversion
+        ADC_START_CONV
+  }
+}
+
+
+
+ISR(TIMER1_OVF_vect)        // debouncer
+{
   static uint8_t no_of_overflows = 0;
+  static uint8_t count = 0;
+  char string [2]; 
 
   no_of_overflows++;
   
-  if(no_of_overflows >=3) {
-    no_of_overflows = 0;
-    // Start ADC conversion
-    ADC_START_CONV
-  }
+  
+   if(no_of_overflows >= 6) 
+   {
+        if (butt_down > 0)
+        {
+            cli();
+            no_of_overflows = 0;  
+            butt_down = 0;
+            
+            Clear_display_values();
+            switch (state)
+            {
+            case 0:
+                state++;
+                ADC_SELECT_CHANNEL_A1
+                break;
+            case 1:
+                state++;
+                ADC_SELECT_CHANNEL_A2
+                break;
+            case 2:
+                state++;
+                ADC_SELECT_CHANNEL_A3
+                break;
+            case 3:
+                state++;       // no select channel because it is automatic mode
+                break;
+            
+            default:
+                state = 0;
+                ADC_SELECT_CHANNEL_A0
+                break;
+            }
+            count++;
+            /* oled_gotoxy(9, 5);
+            itoa(count,string,10);
+            oled_puts(string); */
 
+            sei();
+        }
+   }
+
+}
+
+ISR(TIMER2_OVF_vect)
+{
+     static uint32_t capacit_time = 0;       // big number for sufficient time space
+    static uint8_t measure_run = 0;
+    static uint8_t state_capacit = 0;
+    char string[2];
+
+    if (measure_run)
+    {
+        capacit_time++;
+        
+        if (m_data.capacit_value > 647)
+        {
+            measure_run = 0;
+
+            //m_data.capacitance = (((float)(capacit_time*TIMER2_LENGTH))/REF_RESISTOR_CAP)*1000000; // microFarads
+            m_data.capacitance = (((float)capacit_time/REF_RESISTOR_CAP)*6563.7)-208.5; // microFarads 
+            state_capacit++;
+            GPIO_write_low(&PORTD, CHARGE_PIN);
+        }
+    }
+    else
+    {
+        switch (state_capacit)
+        {
+        case 0: // discharge
+            GPIO_mode_output(&DDRD,DISCHARGE_PIN);
+            GPIO_write_low(&PORTD, DISCHARGE_PIN);
+            if (m_data.capacit_value > 0)
+            {
+                 ; // discharging capacitor
+            }
+            else
+            {
+                GPIO_mode_input_pullup(&DDRD, DISCHARGE_PIN); 
+                 state_capacit = 1;
+            }
+            
+            break;
+        case 1: // charge
+            GPIO_mode_output(&DDRD, CHARGE_PIN);
+            GPIO_write_high(&PORTD, CHARGE_PIN);
+            measure_run = 1;
+            capacit_time = 0; 
+            break;
+        
+        default:
+            state_capacit = 0;
+            break;
+        }  
+
+    
+    }
+     oled_gotoxy(9, 5);
+    itoa(measure_run,string,10);
+    oled_puts(string); 
+
+
+}
+
+ISR(INT0_vect)
+{
+    butt_down++;
 }
 
 ISR(ADC_vect)
@@ -296,6 +357,8 @@ ISR(ADC_vect)
     float value;
     char string[2];  // String for converted numbers by itoa()
     static uint8_t internal_state = 0;
+
+    
 
     // Read converted value
     // Note that, register pair ADCH and ADCL can be read as a 16-bit value ADC
@@ -309,9 +372,10 @@ ISR(ADC_vect)
     oled_gotoxy(9, 4);
     itoa(ADC,string,10);
     oled_puts(string);
-    oled_gotoxy(9, 5);
+
+    /* oled_gotoxy(9, 5);
     itoa(value,string,10);
-    oled_puts(string);
+    oled_puts(string); */
 
     // itoa(value,string,16);
     // lcd_gotoxy(13,0); lcd_puts(string);  // Put ADC value in hexadecimal
@@ -320,11 +384,24 @@ ISR(ADC_vect)
     switch (state)
     {
     case 0:
-            m_data.voltage = value;
-            dtostrf(m_data.voltage,5,DEC,string);
-            oled_gotoxy(13, 4);
-            oled_puts(string);
-            oled_puts(" V");
+            // Disable TIMER2 interrupt     
+            TIM2_OVF_DISABLE
+            if(value < 1.0)
+                {
+                m_data.voltage = value*1000;
+                dtostrf(m_data.voltage,5,0,string);
+                oled_gotoxy(13, 4);
+                oled_puts(string);
+                oled_puts(" mV");
+                }
+                else
+                {
+                    m_data.voltage = value;
+                dtostrf(m_data.voltage,5,DEC,string);
+                oled_gotoxy(14, 4);
+                oled_puts(string);
+                oled_puts(" V");
+                }
         break;
     case 1:
             m_data.current = ((value*1000) - ACSOFTSET)/MVPERAMP;
@@ -335,16 +412,16 @@ ISR(ADC_vect)
             oled_puts(" mA");
         break;
     case 2:
-            // Configuration of 8-bit Timer/Counter2 for Stopwatch update
+            // Configuration of 8-bit Timer/Counter0 for Stopwatch update
             // Set the overflow prescaler to 16 ms and enable interrupt
-            TIM2_OVF_16U
+            TIM2_OVF_1MS
             TIM2_OVF_ENABLE
-            m_data.capacit_value = value;
+            m_data.capacit_value = ADC;
 
-            dtostrf(m_data.capacitance,5,DEC-2,string);
+            dtostrf(m_data.capacitance,5,0,string);
             oled_gotoxy(13, 6);
             oled_puts(string);
-            oled_puts(" mF");
+            oled_puts(" uF");
         break;
     case 3:
             // Disable TIMER2 interrupt
@@ -360,18 +437,29 @@ ISR(ADC_vect)
     default:
     
         // Configuration of 8-bit Timer/Counter2 for Stopwatch update
-        // Set the overflow prescaler to 16 ms and enable interrupt
-        TIM2_OVF_16U
+        // Set the overflow prescaler to 1 ms and enable interrupt
+        TIM2_OVF_1MS
         TIM2_OVF_ENABLE
 
         switch (internal_state)
         {
         case 0:
-                m_data.voltage = value;
-                dtostrf(m_data.voltage,5,DEC,string);
+                if(value < 1.0)
+                {
+                m_data.voltage = value*1000;
+                dtostrf(m_data.voltage,5,0,string);
                 oled_gotoxy(13, 4);
                 oled_puts(string);
+                oled_puts(" mV");
+                }
+                else
+                {
+                    m_data.voltage = value;
+                dtostrf(m_data.voltage,5,DEC,string);
+                oled_gotoxy(14, 4);
+                oled_puts(string);
                 oled_puts(" V");
+                }
             
             internal_state = 1;
             ADC_SELECT_CHANNEL_A1
@@ -388,13 +476,14 @@ ISR(ADC_vect)
             ADC_SELECT_CHANNEL_A2
             break;
         case 2:
-            m_data.capacit_value = value;
+            m_data.capacit_value = ADC;
 
-            dtostrf(m_data.capacitance,5,DEC-2,string);
+            dtostrf(m_data.capacitance,5,0,string);
             oled_gotoxy(13, 6);
             oled_puts(string);
-            oled_puts(" mF");
+            oled_puts(" uF");
             internal_state = 3;
+            ADC_SELECT_CHANNEL_A3
             break;
             
         default:
@@ -409,141 +498,11 @@ ISR(ADC_vect)
             break;
 
         }
-        // Disable TIMER2 interrupt     // vymyslet jak používat timer v měření všech AI najednou ????
-        TIM2_OVF_DISABLE
         break;
     }
 
     oled_display();
 }
-
-ISR(TIMER1_OVF_vect)
-{
-  //static uint8_t no_of_overflows = 0;
-  char string [2]; 
-
-  //no_of_overflows++;
-  
-//   if(no_of_overflows >= 2) {
-//     no_of_overflows = 0;
-
-    uart_puts("Voltage: ");
-    dtostrf(m_data.voltage,5,DEC,string);
-    uart_puts(string);
-    uart_puts(" V\r\n");
-
-    uart_puts("Current: ");
-    dtostrf(m_data.current,5,DEC,string);
-    uart_puts(string);
-    uart_puts(" A\r\n");
-    itoa(state,string,10);
-    uart_puts(string);
-    
-/*
-    uart_puts("Capacitance: ");
-    dtostrf(m_data.capacitance,5,DEC,string);
-    uart_puts(string);
-    uart_puts(" F\r\n");
- 
-    uart_puts("Resistance: ");
-    dtostrf(m_data.resistance,5,DEC-2,string);
-    uart_puts(string);
-    uart_puts(" Ohm\r\n"); */
-
-    uart_puts("----------------\r\n");
-  //}
-
-}
-
-ISR(TIMER2_OVF_vect)
-{
-    static uint32_t capacit_time = 0;       // big number for sufficient time space
-    static uint8_t measure_run = 0;
-    static uint8_t state = 0;
-
-    if (measure_run)
-    {
-        capacit_time++;
-        
-        if (m_data.capacit_value > 647)
-        {
-            measure_run = 0;
-
-            m_data.capacitance = (((float)(capacit_time*TIMER2_LENGTH))/REF_RESISTOR_CAP)*1000; // microFarads
-            state = 0;
-
-        }
-    }
-    else
-    {
-        switch (state)
-        {
-        case 0: // discharge
-            GPIO_mode_output(&DDRD,DISCHARGE_PIN);
-            GPIO_write_low(&DDRD, DISCHARGE_PIN);
-            if (m_data.capacit_value > 0)
-            {
-                 ; // discharging capacitor
-            }
-            else
-            {
-                GPIO_mode_input_pullup(&DDRD, DISCHARGE_PIN); 
-                 state=1;
-            }
-            
-            break;
-        case 1: // charge
-            GPIO_mode_output(&DDRD, CHARGE_PIN);
-            GPIO_write_high(&DDRD, CHARGE_PIN);
-            measure_run = 1;
-            capacit_time = 0;
-            break;
-        
-        default:
-            state = 0;
-            break;
-        }
-    }
-}
-
-ISR(INT0_vect)
-{
-    static uint8_t count = 0;
-    // vyresit debounce
-    //for(uint16_t i = 0; i<1000; i++){ ;} // delay for debounce pushbutton
-    cli();
-    char string [2];
-    Clear_display_values();
-    switch (state)
-    {
-    case 0:
-        state++;
-        ADC_SELECT_CHANNEL_A1
-        break;
-    case 1:
-        state++;
-        ADC_SELECT_CHANNEL_A2
-        break;
-    case 2:
-        state++;
-        ADC_SELECT_CHANNEL_A3
-        break;
-    case 3:
-        state++;       // no select channel
-        break;
-    
-    default:
-        state = 0;
-        ADC_SELECT_CHANNEL_A0
-        break;
-    }
-    count++;
-   /*  oled_gotoxy(9, 4);
-    itoa(ADC,string,10);
-    oled_puts(string); */
-    sei();
-}
-
 
 
 // uart vysrat se na to 

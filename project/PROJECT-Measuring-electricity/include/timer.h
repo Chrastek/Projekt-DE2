@@ -92,7 +92,7 @@
 /** @brief Stop timer, prescaler 000 --> STOP */
 #define TIM2_STOP      TCCR2B &= ~((1<<CS02) | (1<<CS01) | (1<<CS00));
 /** @brief Set overflow 16u , prescaler 001 --> 1 */
-#define TIM2_OVF_16U   TCCR2B &= ~((1<<CS02) | (1<<CS01)); TCCR2B |= (1<<CS00);
+#define TIM2_OVF_NO_PRESCALLING   TCCR2B &= ~((1<<CS02) | (1<<CS01)); TCCR2B |= (1<<CS00);
 /** @brief Set overflow 128u, prescaler 010 --> 8 */
 #define TIM2_OVF_128U  TCCR2B &= ~((1<<CS02) | (1<<CS00)); TCCR2B |= (1<<CS01);
 /** @brief Set overflow 128u, prescaler 011 --> 32 */
