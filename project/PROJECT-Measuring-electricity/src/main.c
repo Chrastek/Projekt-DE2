@@ -179,7 +179,7 @@ int main(void)
 
     // Configuration of 8-bit Timer/Counter0 for Stopwatch update
     // Set the overflow prescaler to 16 ms and enable interrupt
-    TIM0_OVF_16MS
+    TIM0_OVF_1MS
     TIM0_OVF_ENABLE
 
     // Configuration of 16-bit Timer/Counter1 for Stopwatch update
@@ -302,8 +302,8 @@ ISR(TIMER2_OVF_vect)
         {
             measure_run = 0;
 
-            //m_data.capacitance = (((float)(capacit_time*TIMER2_LENGTH))/REF_RESISTOR_CAP)*1000000; // microFarads
-            m_data.capacitance = (((float)capacit_time/REF_RESISTOR_CAP)*6563.7)-208.5; // microFarads 
+            m_data.capacitance = (((float)(capacit_time*TIMER2_LENGTH))/REF_RESISTOR_CAP)*39.1*1000000; // microFarads
+            //m_data.capacitance = (((float)capacit_time/REF_RESISTOR_CAP)*6563.7)-208.5; // microFarads  for 16ms
             state_capacit++;
             GPIO_write_low(&PORTD, CHARGE_PIN);
         }
@@ -341,7 +341,7 @@ ISR(TIMER2_OVF_vect)
     
     }
      oled_gotoxy(9, 5);
-    itoa(measure_run,string,10);
+    itoa(capacit_time,string,10);
     oled_puts(string); 
 
 
@@ -426,12 +426,31 @@ ISR(ADC_vect)
     case 3:
             // Disable TIMER2 interrupt
             TIM2_OVF_DISABLE
-            m_data.resistance = (REF_RESISTOR*REF_VOLTAGE/value)-REF_RESISTOR;
 
-            dtostrf(m_data.resistance,5,DEC-2,string);
-            oled_gotoxy(13, 7);
-            oled_puts(string);
-            oled_puts("Ohm");
+            m_data.resistance = ((REF_RESISTOR*REF_VOLTAGE)/value)-REF_RESISTOR;
+            
+            if (m_data.resistance < 1000)
+            {
+                dtostrf(m_data.resistance,5,DEC-1,string);
+                oled_gotoxy(13, 7);
+                oled_puts(string);
+                oled_puts(" R");
+            }
+            else if (m_data.resistance >= 1000 && m_data.resistance/1000 < 1000 )
+            {
+                dtostrf(m_data.resistance/1000,5,DEC,string);
+                oled_gotoxy(13, 7);
+                oled_puts(string);
+                oled_puts(" k");
+            }
+            else
+            {
+                dtostrf(m_data.resistance,5,DEC,string);
+                oled_gotoxy(13, 7);
+                oled_puts(string);
+                oled_puts(" M");
+            }
+            
         break;
     
     default:
@@ -487,12 +506,29 @@ ISR(ADC_vect)
             break;
             
         default:
-            m_data.resistance = (REF_RESISTOR*REF_VOLTAGE/value)-REF_RESISTOR;
-
-            dtostrf(m_data.resistance,5,DEC-2,string);
-            oled_gotoxy(13, 7);
-            oled_puts(string);
-            oled_puts("Ohm");            
+            m_data.resistance = ((REF_RESISTOR*REF_VOLTAGE)/value)-REF_RESISTOR;
+            
+            if (m_data.resistance < 1000)
+            {
+                dtostrf(m_data.resistance,5,DEC-1,string);
+                oled_gotoxy(13, 7);
+                oled_puts(string);
+                oled_puts(" R");
+            }
+            else if (m_data.resistance >= 1000 && m_data.resistance/1000 < 1000 )
+            {
+                dtostrf(m_data.resistance/1000,5,DEC,string);
+                oled_gotoxy(13, 7);
+                oled_puts(string);
+                oled_puts(" k");
+            }
+            else
+            {
+                dtostrf(m_data.resistance,5,DEC,string);
+                oled_gotoxy(13, 7);
+                oled_puts(string);
+                oled_puts(" M");
+            }        
             internal_state = 0;
             ADC_SELECT_CHANNEL_A0
             break;
