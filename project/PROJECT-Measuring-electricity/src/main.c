@@ -437,16 +437,16 @@ ISR(ADC_vect)
                 oled_puts(string);
                 oled_puts(" R");
             }
-            else if (m_data.resistance >= 1000 && m_data.resistance/1000 < 1000 )
+            if (m_data.resistance >= 1000 && m_data.resistance/1000 < 1000 )
             {
                 dtostrf(m_data.resistance/1000,5,DEC,string);
                 oled_gotoxy(13, 7);
                 oled_puts(string);
                 oled_puts(" k");
             }
-            else
+            if (m_data.resistance/1000 >= 1000)
             {
-                dtostrf(m_data.resistance,5,DEC,string);
+                dtostrf(m_data.resistance/1000000,5,DEC,string);
                 oled_gotoxy(13, 7);
                 oled_puts(string);
                 oled_puts(" M");
