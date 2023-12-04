@@ -175,7 +175,7 @@ int main(void)
     ADC_ENABLE_INTERRUPT
 
     // Set clock prescaler to 128
-    ADC_SET_PRESCALER_128 
+    ADC_SET_PRESCALER_32 
 
     // Configuration of 8-bit Timer/Counter0 for Stopwatch update
     // Set the overflow prescaler to 16 ms and enable interrupt
@@ -302,7 +302,8 @@ ISR(TIMER2_OVF_vect)
         {
             measure_run = 0;
 
-            m_data.capacitance = (((float)(capacit_time*TIMER2_LENGTH))/REF_RESISTOR_CAP)*39.1*1000000; // microFarads
+            m_data.capacitance = (((float)(capacit_time*5.1)))-253.73;
+            //m_data.capacitance = (((float)(capacit_time*TIMER2_LENGTH))/REF_RESISTOR_CAP)*39.1*1000000; // microFarads
             //m_data.capacitance = (((float)capacit_time/REF_RESISTOR_CAP)*6563.7)-208.5; // microFarads  for 16ms
             state_capacit++;
             GPIO_write_low(&PORTD, CHARGE_PIN);
