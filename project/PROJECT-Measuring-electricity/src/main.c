@@ -30,7 +30,7 @@
 #define TIMER2_LENGTH 0.001
 #define REF_VOLTAGE 5.0
 
-#define MVPERAMP 66
+#define MVPERAMP 0.185
 #define ACSOFTSET 2500
 
 
@@ -167,7 +167,7 @@ int main(void)
     ADC_ENABLE_INTERRUPT
 
     // Set clock prescaler to 128
-    ADC_SET_PRESCALER_32 
+    ADC_SET_PRESCALER_128 
 
     // Configuration of 8-bit Timer/Counter0 for Stopwatch update
     // Set the overflow prescaler to 16 ms and enable interrupt
@@ -391,7 +391,11 @@ ISR(ADC_vect)
                 }
         break;
     case 1:
+<<<<<<< HEAD
             m_data.current = (ACSOFTSET - (value*1000) )/MVPERAMP;
+=======
+            m_data.current = (ACSOFTSET - (value*1000))/MVPERAMP;
+>>>>>>> 94863d0c48045511c722fba0ffa50ef98b92467a
 
             dtostrf(m_data.current,5,DEC,string);
             oled_gotoxy(13, 5);
@@ -515,8 +519,7 @@ ISR(ADC_vect)
 }
 
 
-// uart vysrat se na to 
-// dodelat capacitanci
+// dodelat capacitanci dopsat problem
 // 
 // vycistit kód
 // dokumentace
