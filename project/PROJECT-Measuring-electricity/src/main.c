@@ -73,7 +73,7 @@ void Clear_display_values(void)
     oled_gotoxy(9, 4);
     oled_puts("     ");
     oled_gotoxy(9, 5);
-    oled_puts("     ");
+    oled_puts("       ");
     oled_gotoxy(13, 4);
     oled_puts("        ");
     oled_gotoxy(13, 5);
@@ -84,8 +84,12 @@ void Clear_display_values(void)
     oled_puts("        ");
 }
 
-// Flag for printing new data from sensor
-//volatile uint8_t new_sensor_data = 0;
+void Clear_display_capacit_time(void)
+{
+    oled_gotoxy(9, 5);
+    oled_puts("    ");
+}
+
 
 
 /* Function definitions ----------------------------------------------*/
@@ -96,8 +100,6 @@ void Clear_display_values(void)
 **********************************************************************/
 int main(void)
 {
-    //char string[2];  // String for converting numbers by itoa()
-    
     // TWI
     twi_init();
 
@@ -146,16 +148,6 @@ int main(void)
 
     oled_gotoxy(0, 7);
     oled_puts("Resistance:");
-
-    
-
-    // // Test if sensor is ready
-    // /* if (twi_test_address(SENSOR_ADR) == 0)
-    //     uart_puts("I2C sensor detected\r\n");
-    // else {
-    //     uart_puts("[ERROR] I2C device not detected\r\n");
-    //     while (1); 
-    // }*/
     
     
     // /***************************************************
@@ -186,11 +178,6 @@ int main(void)
     // Set the overflow prescaler to 4 ms and enable interrupt
     TIM1_OVF_33MS
     TIM1_OVF_ENABLE
-
-    // Configuration of 8-bit Timer/Counter2 for Stopwatch update
-    // Set the overflow prescaler to 16 ms and enable interrupt
-    // TIM2_OVF_1MS
-    // TIM2_OVF_ENABLE
     
 
     // Configuration of External Interrupt of INT0 - PORT D PIN2
@@ -238,21 +225,22 @@ ISR(TIMER0_OVF_vect)
 ISR(TIMER1_OVF_vect)        // debouncer
 {
   static uint8_t no_of_overflows = 0;
-  static uint8_t count = 0;
-  char string [2]; 
 
   no_of_overflows++;
   
   
-   if(no_of_overflows >= 6) 
+   if(no_of_overflows >= 12) 
    {
         if (butt_down > 0)
         {
+
+            //Clear_display_capacit_time();
+
             cli();
             no_of_overflows = 0;  
             butt_down = 0;
             
-            Clear_display_values();
+
             switch (state)
             {
             case 0:
@@ -260,26 +248,43 @@ ISR(TIMER1_OVF_vect)        // debouncer
                 ADC_SELECT_CHANNEL_A1
                 break;
             case 1:
+
+                // Configuration of 8-bit Timer/Counter0 for Stopwatch update
+                // Set the overflow prescaler to 16 ms and enable interrupt
+                TIM2_OVF_1MS
+                TIM2_OVF_ENABLE
+
                 state++;
                 ADC_SELECT_CHANNEL_A2
                 break;
             case 2:
+
+                // Disable TIMER2 interrupt     
+                TIM2_OVF_DISABLE
+
                 state++;
                 ADC_SELECT_CHANNEL_A3
                 break;
             case 3:
+
+                // Configuration of 8-bit Timer/Counter2 for Stopwatch update
+                // Set the overflow prescaler to 1 ms and enable interrupt
+                TIM2_OVF_1MS
+                TIM2_OVF_ENABLE
+
                 state++;       // no select channel because it is automatic mode
                 break;
             
             default:
+
+                // Disable TIMER2 interrupt     
+                TIM2_OVF_DISABLE
+
                 state = 0;
                 ADC_SELECT_CHANNEL_A0
                 break;
             }
-            count++;
-            /* oled_gotoxy(9, 5);
-            itoa(count,string,10);
-            oled_puts(string); */
+            Clear_display_values();
 
             sei();
         }
@@ -294,8 +299,12 @@ ISR(TIMER2_OVF_vect)
     static uint8_t state_capacit = 0;
     char string[2];
 
+
     if (measure_run)
     {
+        oled_gotoxy(9, 5);
+        itoa(capacit_time,string,10);
+        oled_puts(string); 
         capacit_time++;
         
         if (m_data.capacit_value > 647)
@@ -307,6 +316,7 @@ ISR(TIMER2_OVF_vect)
             //m_data.capacitance = (((float)capacit_time/REF_RESISTOR_CAP)*6563.7)-208.5; // microFarads  for 16ms
             state_capacit++;
             GPIO_write_low(&PORTD, CHARGE_PIN);
+            Clear_display_capacit_time();
         }
     }
     else
@@ -341,9 +351,6 @@ ISR(TIMER2_OVF_vect)
 
     
     }
-     oled_gotoxy(9, 5);
-    itoa(capacit_time,string,10);
-    oled_puts(string); 
 
 
 }
@@ -359,34 +366,13 @@ ISR(ADC_vect)
     char string[2];  // String for converted numbers by itoa()
     static uint8_t internal_state = 0;
 
-    
-
     // Read converted value
     // Note that, register pair ADCH and ADCL can be read as a 16-bit value ADC
     value = ADC*(REF_VOLTAGE/1023);
-    // Convert "value" to "string" and display it
-    // itoa(value,string,10);
-    // lcd_gotoxy(1, 0); lcd_puts("value:");
-    // lcd_gotoxy(3, 1); lcd_puts("key:");
-    // lcd_gotoxy(8, 0); lcd_puts(string);  // Put ADC value in decimal
-
-    oled_gotoxy(9, 4);
-    itoa(ADC,string,10);
-    oled_puts(string);
-
-    /* oled_gotoxy(9, 5);
-    itoa(value,string,10);
-    oled_puts(string); */
-
-    // itoa(value,string,16);
-    // lcd_gotoxy(13,0); lcd_puts(string);  // Put ADC value in hexadecimal
-    // lcd_gotoxy(8, 1); lcd_putc(value);  // Put button name here
 
     switch (state)
     {
     case 0:
-            // Disable TIMER2 interrupt     
-            TIM2_OVF_DISABLE
             if(value < 1.0)
                 {
                 m_data.voltage = value*1000;
@@ -405,7 +391,7 @@ ISR(ADC_vect)
                 }
         break;
     case 1:
-            m_data.current = ((value*1000) - ACSOFTSET)/MVPERAMP;
+            m_data.current = (ACSOFTSET - (value*1000) )/MVPERAMP;
 
             dtostrf(m_data.current,5,DEC,string);
             oled_gotoxy(13, 5);
@@ -413,10 +399,6 @@ ISR(ADC_vect)
             oled_puts(" mA");
         break;
     case 2:
-            // Configuration of 8-bit Timer/Counter0 for Stopwatch update
-            // Set the overflow prescaler to 16 ms and enable interrupt
-            TIM2_OVF_1MS
-            TIM2_OVF_ENABLE
             m_data.capacit_value = ADC;
 
             dtostrf(m_data.capacitance,5,0,string);
@@ -425,9 +407,6 @@ ISR(ADC_vect)
             oled_puts(" uF");
         break;
     case 3:
-            // Disable TIMER2 interrupt
-            TIM2_OVF_DISABLE
-
             m_data.resistance = ((REF_RESISTOR*REF_VOLTAGE)/value)-REF_RESISTOR;
             
             if (m_data.resistance < 1000)
@@ -455,12 +434,6 @@ ISR(ADC_vect)
         break;
     
     default:
-    
-        // Configuration of 8-bit Timer/Counter2 for Stopwatch update
-        // Set the overflow prescaler to 1 ms and enable interrupt
-        TIM2_OVF_1MS
-        TIM2_OVF_ENABLE
-
         switch (internal_state)
         {
         case 0:
@@ -485,7 +458,7 @@ ISR(ADC_vect)
             ADC_SELECT_CHANNEL_A1
             break;
         case 1:
-                m_data.current = value*10;
+                m_data.current = (ACSOFTSET - (value*1000) )/MVPERAMP;
 
                 dtostrf(m_data.current,5,DEC,string);
                 oled_gotoxy(13, 5);
